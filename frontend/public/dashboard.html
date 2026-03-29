@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rio Amazonas - Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+        }
+
+        .refresh-btn {
+            background: #667eea;
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .estacao-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 2rem;
+        }
+
+        .estacao-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .estacao-card h2 {
+            color: #667eea;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-size: 1.8rem;
+        }
+
+        .tabela-container {
+            overflow-x: auto;
+            margin-bottom: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .chart-container {
+            height: 300px;
+            margin: 1rem 0;
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .estacao-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🌊 Projeto Rio Amazonas</h1>
+            <button class="refresh-btn" onclick="carregarDados()">Atualizar Dados</button>
+        </header>
+
+        <main id="main-content">
+            <div class="loading">Carregando dados...</div>
+        </main>
+    </div>
+
+    <script>
+        let dadosGlobais = {};
+        let charts = {};
+
+        async function carregarDados() {
+            const mainContent = document.getElementById('main-content');
+            mainContent.innerHTML = '<div class="loading">Carregando dados...</div>';
+
+            try {
+                const [dadosResponse, estacoesResponse] = await Promise.all([
+                    fetch('http://localhost:5000/api/dados'),
+                    fetch('http://localhost:5000/api/estacoes')
+                ]);
+
+                if (!dadosResponse.ok || !estacoesResponse.ok) {
+                    throw new Error('Erro na resposta da API');
+                }
+
+                const dados = await dadosResponse.json();
+                const estacoes = await estacoesResponse.json();
+
+                dadosGlobais = dados;
+                renderizarDashboard(estacoes.estacoes, dados);
+
+            } catch (error) {
+                mainContent.innerHTML = `<div class="error">Erro ao carregar dados: ${error.message}</div>`;
+            }
+        }
+
+        function renderizarDashboard(estacoes, dados) {
+            const mainContent = document.getElementById('main-content');
+
+            const html = `
+                <div class="estacao-grid">
+                    ${estacoes.map(estacao => renderizarEstacao(estacao, dados[estacao])).join('')}
+                </div>
+            `;
+
+            mainContent.innerHTML = html;
+
+            // Renderizar gráficos após o HTML
+            setTimeout(() => {
+                estacoes.forEach(estacao => {
+                    if (dados[estacao] && dados[estacao].length > 0) {
+                        renderizarGraficos(estacao, dados[estacao]);
+                    }
+                });
+            }, 100);
+        }
+
+        function renderizarEstacao(estacao, dadosEstacao) {
+            if (!dadosEstacao || dadosEstacao.length === 0) {
+                return `
+                    <div class="estacao-card">
+                        <h2>${estacao}</h2>
+                        <p style="text-align: center; color: #6c757d;">Sem dados disponíveis</p>
+                    </div>
+                `;
+            }
+
+            const tabelaHtml = `
+                <div class="tabela-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Vazão (m³/s)</th>
+                                <th>Cota (m)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${dadosEstacao.map(item => `
+                                <tr>
+                                    <td>${formatarData(item.data)}</td>
+                                    <td>${item.vazao ? item.vazao.toFixed(0) : '-'}</td>
+                                    <td>${item.cota_m ? item.cota_m.toFixed(2) : '-'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            const graficosHtml = `
+                ${dadosEstacao.some(item => item.vazao) ? `
+                    <div class="chart-container">
+                        <canvas id="chart-vazao-${estacao}"></canvas>
+                    </div>
+                ` : ''}
+                ${dadosEstacao.some(item => item.cota_m) ? `
+                    <div class="chart-container">
+                        <canvas id="chart-cota-${estacao}"></canvas>
+                    </div>
+                ` : ''}
+            `;
+
+            return `
+                <div class="estacao-card">
+                    <h2>${estacao}</h2>
+                    ${tabelaHtml}
+                    ${graficosHtml}
+                </div>
+            `;
+        }
+
+        function renderizarGraficos(estacao, dados) {
+            // Gráfico de vazão
+            if (dados.some(item => item.vazao)) {
+                const ctxVazao = document.getElementById(`chart-vazao-${estacao}`);
+                if (ctxVazao) {
+                    new Chart(ctxVazao, {
+                        type: 'line',
+                        data: {
+                            labels: dados.map(item => formatarData(item.data)),
+                            datasets: [{
+                                label: 'Vazão (m³/s)',
+                                data: dados.map(item => item.vazao || null),
+                                borderColor: '#667eea',
+                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                tension: 0.1,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            // Gráfico de cota
+            if (dados.some(item => item.cota_m)) {
+                const ctxCota = document.getElementById(`chart-cota-${estacao}`);
+                if (ctxCota) {
+                    new Chart(ctxCota, {
+                        type: 'line',
+                        data: {
+                            labels: dados.map(item => formatarData(item.data)),
+                            datasets: [{
+                                label: 'Cota (m)',
+                                data: dados.map(item => item.cota_m || null),
+                                borderColor: '#764ba2',
+                                backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                                tension: 0.1,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
+        function formatarData(dataStr) {
+            const data = new Date(dataStr);
+            return data.toLocaleDateString('pt-BR');
+        }
+
+        // Carregar dados automaticamente ao carregar a página
+        window.onload = carregarDados;
+    </script>
+</body>
+</html>

@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 import requests
-from config import OPEN_METEO_URL, OPEN_METEO_PARAMS, TIMEOUT, VAZAO_MINIMA
+from backend.src.config import OPEN_METEO_URL, OPEN_METEO_PARAMS, TIMEOUT, VAZAO_MINIMA
 
 logger = logging.getLogger(__name__)
 

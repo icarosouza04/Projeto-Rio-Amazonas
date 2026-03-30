@@ -37,6 +37,8 @@ Acesse: `http://localhost:5173`
 - **Tabelas de dados** com formatação de datas
 - **Atualização em tempo real** dos dados
 - **Fallback automático** quando API não responde
+- **Múltiplas estações**: Manaus, Itacoatiara, Parintins, Óbidos, Tefé
+- **Gráfico mensal de tendência** de cota para comparativo histórico
 - **Interface responsiva** para desktop e mobile
 
 ## 🏗️ Arquitetura

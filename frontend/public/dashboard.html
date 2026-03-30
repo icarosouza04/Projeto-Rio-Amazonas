@@ -196,8 +196,15 @@
             const mainContent = document.getElementById('main-content');
 
             const html = `
+                <div class="global-chart">
+                    <h3>Tendência Mensal - Cotas</h3>
+                    <div class="chart-container">
+                        <canvas id="chart-tendencia-mensal"></canvas>
+                    </div>
+                </div>
+
                 <div class="estacao-grid">
-                    ${estacoes.map(estacao => renderizarEstacao(estacao, dados[estacao])).join('')}
+                    ${estacoes.map(estacao => renderizarEstacao(estacao, dados[estacao]?.dados || [], dados[estacao]?.fonte)).join('')}
                 </div>
             `;
 
@@ -205,20 +212,24 @@
 
             // Renderizar gráficos após o HTML
             setTimeout(() => {
+                renderizarTendenciaMensal(estacoes, dados);
+
                 estacoes.forEach(estacao => {
-                    if (dados[estacao] && dados[estacao].length > 0) {
-                        renderizarGraficos(estacao, dados[estacao]);
+                    const dadosEstacao = dados[estacao]?.dados || [];
+                    if (dadosEstacao.length > 0) {
+                        renderizarGraficos(estacao, dadosEstacao);
                     }
                 });
             }, 100);
         }
 
-        function renderizarEstacao(estacao, dadosEstacao) {
+        function renderizarEstacao(estacao, dadosEstacao, fonte) {
             if (!dadosEstacao || dadosEstacao.length === 0) {
                 return `
                     <div class="estacao-card">
                         <h2>${estacao}</h2>
                         <p style="text-align: center; color: #6c757d;">Sem dados disponíveis</p>
+                        <p style="font-size: 0.85rem;color:#666;margin-top:0.5rem;">Fonte: ${fonte || 'desconhecida'}</p>
                     </div>
                 `;
             }
@@ -342,12 +353,57 @@
             }
         }
 
+        function renderizarTendenciaMensal(estacoes, dados) {
+            const canvas = document.getElementById('chart-tendencia-mensal');
+            if (!canvas) return;
+
+            const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+            const datasets = estacoes.map((estacao, index) => {
+                const trend = dados[estacao]?.tendencia_mensal || {};
+                const color = `hsl(${(index * 60) % 360}, 70%, 45%)`;
+
+                return {
+                    label: estacao,
+                    data: meses.map(mes => trend[mes] || null),
+                    borderColor: color,
+                    backgroundColor: `${color.replace('hsl', 'hsla').replace(')', ', 0.1)')}`,
+                    tension: 0.15,
+                    fill: false
+                };
+            }).filter(dataset => dataset.data.some(v => v !== null));
+
+            if (!datasets.length) {
+                canvas.parentElement.innerHTML = '<p>Nenhuma tendência mensal disponível</p>';
+                return;
+            }
+
+            new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: meses,
+                    datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        title: { display: true, text: 'Tendência Mensal de Cota por Estação' }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
         function formatarData(dataStr) {
             const data = new Date(dataStr);
             return data.toLocaleDateString('pt-BR');
         }
 
         // Carregar dados automaticamente ao carregar a página
+        carregarDados();
         window.onload = carregarDados;
     </script>
 </body>

@@ -2,14 +2,10 @@ import pandas as pd
 import json
 import logging
 from pathlib import Path
-import sys
 
-# Add backend to path for imports
-sys.path.append(str(Path(__file__).parent.parent))
-
-from config import ESTACOES, CAMINHO_FALLBACK
-from api import buscar_open_meteo
-from processamento import vazao_para_cota
+from backend.src.config import ESTACOES, CAMINHO_FALLBACK
+from backend.src.api import buscar_open_meteo
+from backend.src.processamento import vazao_para_cota
 
 # Configurar logging
 logging.basicConfig(
@@ -77,38 +73,76 @@ def obter_dados_com_fallback(nome, cfg):
         return df_vazao, 'fallback'
 
 
-def main():
-    """Busca dados fluviométricos do Rio Amazonas"""
-    dados_api = {}
+def calcular_tendencia_mensal(df):
+    if df.empty:
+        return {}
+
+    monthly = (
+        df.assign(data=pd.to_datetime(df['data']))
+          .assign(mes=lambda x: x['data'].dt.strftime('%b'))
+          .groupby('mes')['cota_m']
+          .mean()
+          .reindex(['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'])
+    )
+
+    monthly = monthly.dropna().to_dict()
+    return {mes: round(float(valor), 2) for mes, valor in monthly.items()}
+
+
+def montar_resposta(df, fonte):
+    if df.empty:
+        return {'dados': [], 'fonte': fonte, 'tendencia_mensal': {}}
+
+    normalizado = []
+    df = df.sort_values('data').reset_index(drop=True)
+
+    for _, row in df.iterrows():
+        normalizado.append({
+            'data': pd.to_datetime(row['data']).date().isoformat(),
+            'vazao': float(row['vazao']) if pd.notna(row.get('vazao')) else None,
+            'cota_m': float(row['cota_m']) if pd.notna(row.get('cota_m')) else None
+        })
+
+    return {
+        'dados': normalizado,
+        'fonte': fonte,
+        'tendencia_mensal': calcular_tendencia_mensal(df)
+    }
+
+
+def obter_dados():
+    """Retorna dados para todas as estações."""
+    resposta = {}
 
     for nome, cfg in ESTACOES.items():
-        print(f"📡 Buscando dados de {nome}...")
-        logger.info(f"Processando estação: {nome}")
-
         df_vazao, fonte = obter_dados_com_fallback(nome, cfg)
 
         if not df_vazao.empty:
-            df = vazao_para_cota(
-                df_vazao,
-                cfg['rc_a'],
-                cfg['rc_b'],
-                cfg['cota_maxima']
-            )
-            print(f"✅ {len(df)} registros obtidos de {nome} ({fonte})")
-
+            df_cota = vazao_para_cota(df_vazao, cfg['rc_a'], cfg['rc_b'], cfg['cota_maxima'])
         else:
-            df = pd.DataFrame()
-            print(f"❌ Sem dados para {nome} mesmo após fallback")
-            logger.error(f"Não há dados para {nome} na API nem no fallback")
+            df_cota = pd.DataFrame()
 
-        dados_api[nome] = df
+        resposta[nome] = montar_resposta(df_cota, fonte)
 
-    # Salvar dados para próximas execuções
-    if dados_api:
-        salvar_fallback(dados_api)
+    # Salva fallback sempre que houver dados novos
+    fallback_para_salvar = {}
+    for nome, info in resposta.items():
+        if info['dados']:
+            fallback_para_salvar[nome] = pd.DataFrame(info['dados'])
+        else:
+            fallback_para_salvar[nome] = pd.DataFrame()
 
-    print("✅ Finalizado!")
-    return dados_api
+    salvar_fallback(fallback_para_salvar)
 
-if __name__ == "__main__":
+    return resposta
+
+
+def main():
+    """Busca dados fluviométricos do Rio Amazonas"""
+    resultado = obter_dados()
+    print("✅ Processo concluído")
+    return resultado
+
+
+if __name__ == '__main__':
     main()

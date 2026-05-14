@@ -8,7 +8,6 @@ import {
 
 /* ─── CSS ─────────────────────────────────────────────────────────────────── */
 const css = `
-/* FIX 6: Fonte melhorada — Outfit (sans) + Lora (serif) */
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Lora:ital,wght@0,500;0,600;1,400;1,500&family=DM+Mono:wght@400;500&display=swap');
 
 :root {
@@ -138,10 +137,7 @@ body{
 }
 .sid-logo:hover .sid-bzr-wrap{ filter:brightness(1.15); }
 .sid-bzr-wrap{ flex-shrink:0; transition:filter .2s; }
-.sid-name{
-  display:flex;flex-direction:column;gap:2px;
-  min-width:0;
-}
+.sid-name{ display:flex;flex-direction:column;gap:2px; min-width:0; }
 .sid-wordmark{
   font-family:'Lora',Georgia,serif;
   font-size:18px;font-weight:600;letter-spacing:.01em;
@@ -235,7 +231,7 @@ body{
 .c-tab.active{color:var(--text);border-bottom-color:var(--teal);font-weight:500}
 .c-tab .cdot{width:5px;height:5px;border-radius:50%;background:var(--red);display:inline-block}
 
-/* ALERTA BAR */
+/* ══ ALERTA DINÂMICO ══ */
 .al-bar{
   display:flex;align-items:flex-start;gap:10px;
   padding:10px 14px;border-radius:var(--r);
@@ -243,15 +239,16 @@ body{
   margin-bottom:16px;
 }
 .al-bar.warn{border-left-color:var(--amber);background:var(--amberL)}
+.al-bar.atencao{border-left-color:var(--amber);background:var(--amberL)}
 .al-ico{font-size:13px;flex-shrink:0;margin-top:1px}
 .al-ttl{font-size:12px;font-weight:500;color:var(--red);margin-bottom:2px}
-.al-bar.warn .al-ttl{color:var(--amber)}
+.al-bar.warn .al-ttl,.al-bar.atencao .al-ttl{color:var(--amber)}
 .al-dsc{font-size:11px;color:var(--muted);line-height:1.5}
 
 .filtro-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
 .filtro-lbl{font-size:11px;color:var(--muted)}
 
-/* FIX 2: INFO UPDATE BAR — movida abaixo dos tabs, estilo melhorado */
+/* UPDATE BAR */
 .update-bar{
   display:flex;align-items:center;gap:0;
   background:var(--surface);
@@ -275,7 +272,6 @@ body{
   display:flex;align-items:center;
   background:var(--surf2);
 }
-[data-theme=dark] .update-bar{background:var(--surface);border-color:var(--border)}
 
 /* KPI GRID */
 .kpi-grid{
@@ -301,6 +297,7 @@ body{
 .fonte-sace{background:var(--tealL);color:var(--teal)}
 .fonte-openmeteo{background:var(--amberL);color:var(--amber)}
 .fonte-fallback{background:var(--redL);color:var(--red)}
+.fonte-ana{background:var(--navyL);color:var(--navy)}
 
 /* CHART GRID */
 .chart-grid{display:grid;grid-template-columns:1fr 230px;gap:12px;margin-bottom:12px}
@@ -320,7 +317,7 @@ body{
 .n-status{font-size:12px;font-weight:500;margin-top:3px}
 .pico{display:flex;flex-direction:column;gap:11px}
 
-/* FIX 3: TABELA ESTAÇÕES — cabeçalho melhorado */
+/* TABELA */
 .est-tbl{width:100%;border-collapse:collapse}
 .est-tbl th{
   font-size:9px;letter-spacing:.1em;text-transform:uppercase;
@@ -379,34 +376,79 @@ body{
 .dash-kpi-val{font-size:20px;font-weight:500;letter-spacing:-.03em}
 .dash-kpi-sub{font-size:10px;color:var(--muted);margin-top:3px}
 
-/* ══ HOME — FIX 1 ══ */
-/* FIX 1a: Scroll indicator na home */
+/* ══ TICKER ══ */
+.ticker-outer{
+  overflow:hidden;
+  background:rgba(0,0,0,.18);
+  border-top:1px solid rgba(255,255,255,.07);
+  border-bottom:1px solid rgba(255,255,255,.05);
+  padding:10px 0;
+  position:relative;
+  width:100%;
+}
+.ticker-outer::before,.ticker-outer::after{
+  content:'';position:absolute;top:0;bottom:0;width:60px;z-index:2;pointer-events:none;
+}
+.ticker-outer::before{left:0;background:linear-gradient(90deg,rgba(42,34,24,1),transparent)}
+.ticker-outer::after{right:0;background:linear-gradient(270deg,rgba(42,34,24,1),transparent)}
+.ticker-track{
+  display:flex;gap:0;
+  animation:tickerScroll 40s linear infinite;
+  width:max-content;
+}
+.ticker-outer:hover .ticker-track{animation-play-state:paused}
+@keyframes tickerScroll{
+  0%{transform:translateX(0)}
+  100%{transform:translateX(-50%)}
+}
+.ticker-item{
+  display:flex;align-items:center;gap:10px;
+  padding:0 28px;
+  cursor:pointer;
+  transition:opacity .15s;
+  white-space:nowrap;
+  border-right:1px solid rgba(255,255,255,.06);
+}
+.ticker-item:hover{opacity:.7}
+.ticker-name{font-size:11px;font-weight:500;color:rgba(237,233,225,.8);font-family:'DM Mono',monospace;letter-spacing:.04em}
+.ticker-cota{font-size:12px;font-weight:500;font-family:'DM Mono',monospace}
+.ticker-var{font-size:10px;font-family:'DM Mono',monospace}
+.ticker-badge{
+  font-size:9px;font-weight:600;padding:1px 6px;border-radius:99px;
+  text-transform:uppercase;letter-spacing:.06em;
+}
+.ticker-sep{
+  width:4px;height:4px;border-radius:50%;
+  background:rgba(255,255,255,.15);flex-shrink:0;
+}
+
+/* ══ HOME ══ */
 .home-page{
   flex:1;overflow-y:auto;background:var(--bg);
   scrollbar-width:thin;scrollbar-color:var(--faint) transparent;
-  scroll-snap-type:y proximity;
 }
-/* Scrollbar visível no webkit */
 .home-page::-webkit-scrollbar{width:5px}
 .home-page::-webkit-scrollbar-track{background:transparent}
 .home-page::-webkit-scrollbar-thumb{background:var(--faint);border-radius:99px}
 .home-page::-webkit-scrollbar-thumb:hover{background:var(--muted)}
 
-/* FIX 1b: Hero com layout lateral — SEM nome FluviAM duplicado, fundo mais claro */
 .home-hero{
   position:relative;
-  /* Cor mais clara que o sidebar (#2A2218 vs anterior #141210) */
   background:#2A2218;
   padding:0;
   overflow:hidden;
   min-height:420px;
   display:flex;align-items:stretch;
+  flex-direction:column;
 }
 .home-hero::after{
   content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
   background:linear-gradient(90deg,transparent,rgba(196,122,30,.3),transparent);
 }
-/* Coluna esquerda: texto */
+/* conteúdo principal do hero — layout lateral */
+.home-hero-content{
+  display:flex;align-items:stretch;flex:1;
+}
 .home-hero-left{
   flex:1;min-width:0;
   display:flex;flex-direction:column;
@@ -415,14 +457,15 @@ body{
   position:relative;z-index:1;
   animation:homeReveal .8s cubic-bezier(.16,1,.3,1) both;
 }
-/* Coluna direita: logo/visual */
+/* ══ HERO RIGHT — painel de estações em vez da logo ══ */
 .home-hero-right{
-  width:340px;flex-shrink:0;
+  width:320px;flex-shrink:0;
   display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  padding:40px 40px 40px 0;
+  justify-content:center;
+  padding:32px 32px 32px 0;
   position:relative;z-index:1;
   animation:homeRevealRight 1s cubic-bezier(.16,1,.3,1) .15s both;
+  gap:8px;
 }
 @keyframes homeReveal{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
 @keyframes homeRevealRight{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
@@ -435,12 +478,28 @@ body{
   width:1px;background:rgba(255,255,255,.07);
   margin:40px 0;align-self:stretch;flex-shrink:0;
 }
+
+/* mini cards no hero right */
+.hero-station-card{
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:8px;
+  padding:9px 12px;
+  display:flex;align-items:center;gap:10px;
+  cursor:pointer;
+  transition:background .15s;
+}
+.hero-station-card:hover{background:rgba(255,255,255,.08)}
+.hero-sc-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.hero-sc-name{font-size:11px;font-weight:500;color:rgba(237,233,225,.75);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero-sc-cota{font-family:'DM Mono',monospace;font-size:12px;font-weight:500}
+.hero-sc-var{font-family:'DM Mono',monospace;font-size:10px}
+
 .home-eyebrow{
   font-size:9px;letter-spacing:.2em;text-transform:uppercase;
   color:rgba(255,255,255,.3);font-family:'DM Mono',monospace;
   margin-bottom:16px;
 }
-/* FIX 1c: Frase lateral — tamanho reduzido e mais proporcional */
 .home-title{
   font-family:'Lora',Georgia,serif;
   font-size:38px;line-height:1.15;
@@ -476,34 +535,12 @@ body{
   border-top:1px solid rgba(255,255,255,.07);
   padding-top:20px;gap:8px;
 }
-.home-stat{}
 .home-stat-val{
   font-family:'DM Mono',monospace;
   font-size:20px;font-weight:400;color:#EDE9E1;
   letter-spacing:-.01em;line-height:1;margin-bottom:4px;
 }
 .home-stat-lbl{font-size:9px;color:rgba(255,255,255,.28);font-family:'DM Mono',monospace;letter-spacing:.06em;text-transform:uppercase}
-
-/* Lado direito da hero: logo grande sem nome */
-.home-logo-visual{
-  display:flex;flex-direction:column;align-items:center;gap:20px;
-}
-.home-logo-subtitle{
-  font-size:9px;letter-spacing:.18em;text-transform:uppercase;
-  color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;
-  text-align:center;
-}
-/* Indicador de scroll */
-.home-scroll-hint{
-  position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
-  display:flex;flex-direction:column;align-items:center;gap:4px;
-  opacity:.4;animation:scrollHintBounce 2s ease-in-out infinite;
-}
-@keyframes scrollHintBounce{
-  0%,100%{transform:translateX(-50%) translateY(0)}
-  50%{transform:translateX(-50%) translateY(4px)}
-}
-.home-scroll-hint span{font-size:9px;color:rgba(255,255,255,.5);font-family:'DM Mono',monospace;letter-spacing:.1em;text-transform:uppercase}
 
 .home-features{padding:28px 40px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
 .home-feat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
@@ -523,7 +560,7 @@ body{
 .hai-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 .home-footer{padding:16px 40px 28px;text-align:center;border-top:1px solid var(--border);}
 
-/* ══ REDE DE ESTAÇÕES ══ */
+/* REDE */
 .filtros-rede{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
 .filtro-chip{
   padding:5px 13px;border-radius:99px;
@@ -533,7 +570,6 @@ body{
 }
 .filtro-chip:hover{color:var(--text);border-color:var(--text)}
 .filtro-chip.ativo{background:var(--navy);color:#fff;border-color:var(--navy)}
-/* FIX 3: cabeçalho da tabela rede melhorado */
 .regiao-label{
   font-size:9px;letter-spacing:.12em;text-transform:uppercase;
   color:var(--muted);font-family:'DM Mono',monospace;
@@ -566,7 +602,7 @@ body{
   font-size:10px;font-weight:500;padding:2px 8px;border-radius:99px;text-align:center;
 }
 
-/* ══ LOG DE ATUALIZAÇÕES ══ */
+/* LOG */
 .log-page{}
 .log-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
 .log-filters{display:flex;gap:8px;flex-wrap:wrap}
@@ -577,7 +613,6 @@ body{
   transition:background .12s;
 }
 .log-entry:hover{background:var(--surf2)}
-/* FIX 5: Entradas de cache com destaque diferenciado */
 .log-entry.log-cache{
   border-left:3px solid var(--red);
   background:rgba(192,57,43,.03);
@@ -593,7 +628,6 @@ body{
 .log-top{display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap;}
 .log-estacao{font-size:12.5px;font-weight:500}
 .log-ts{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace}
-.log-periodo{font-size:10px;color:var(--muted)}
 .log-detail{font-size:11.5px;color:var(--muted);line-height:1.55}
 .log-detail.log-detail-erro{color:var(--red)}
 .log-cota{font-family:'DM Mono',monospace;font-size:13px;flex-shrink:0;text-align:right;padding-top:2px}
@@ -611,7 +645,6 @@ body{
 .log-sum-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;}
 .log-sum-val{font-size:20px;font-weight:500;letter-spacing:-.02em;color:var(--text)}
 .log-sum-lbl{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:'DM Mono',monospace;margin-top:4px;}
-/* FIX 5: card de cache com alerta visual */
 .log-sum-card.log-sum-alert{border-color:rgba(192,57,43,.3);background:rgba(192,57,43,.04)}
 
 /* ESTADO */
@@ -622,8 +655,9 @@ body{
 .footer{border-top:1px solid var(--border);padding:11px 22px;text-align:center;font-size:10px;color:var(--faint);font-family:'DM Mono',monospace;flex-shrink:0}
 
 @media(max-width:900px){
-  .home-hero{flex-direction:column}
-  .home-hero-right{width:100%;padding:0 40px 36px}
+  .home-hero-content{flex-direction:column}
+  .home-hero-right{width:100%;padding:0 24px 28px;flex-direction:row;flex-wrap:wrap}
+  .hero-station-card{flex:1;min-width:140px}
   .home-hero-divider{display:none}
   .home-hero-left{padding:40px 24px 24px}
   .home-title{font-size:30px}
@@ -658,7 +692,6 @@ const BanzeiroWave = ({ width = 200, dark = true, className = '' }) => {
       <path fill="none" stroke={teal} strokeWidth="3" strokeLinecap="round" d="M44,58 C62,46 74,70 92,58 C110,46 122,70 140,58 C158,46 170,70 188,58 C206,46 218,66 236,58 C250,52 258,64 268,60"/>
       <path fill="none" stroke={amber} strokeWidth="2.5" strokeLinecap="round" opacity="0.45" d="M44,42 C58,30 68,54 84,42 C100,30 112,54 128,42 C144,30 156,54 172,44 C188,34 200,56 216,46 C228,38 244,50 258,44"/>
       <path fill="none" stroke={teal} strokeWidth="2" strokeLinecap="round" opacity="0.3" d="M50,66 C68,56 80,76 98,66 C116,56 128,76 146,66 C164,56 176,74 194,66 C210,58 224,70 240,64"/>
-      <path fill="none" stroke={amber} strokeWidth="1.5" strokeLinecap="round" opacity="0.18" d="M50,36 C64,26 76,46 92,36 C108,26 120,46 136,38 C152,30 164,46 180,38 C192,30 208,42 224,36"/>
       <circle fill="none" stroke={tealLight} strokeWidth="3" cx="152" cy="50" r="7"/>
       <circle fill={amber} cx="152" cy="50" r="3.5"/>
     </svg>
@@ -710,26 +743,37 @@ const SplashScreen = ({ onDone }) => {
 };
 
 /* ─── Config ──────────────────────────────────────────────────────────────── */
-const ALERTAS_FIXOS = {
-  "Manaus": { tipo:"danger", titulo:"Alerta de enchente — Manaus", desc:"Zona Sul com risco elevado. Nível acima da cota de atenção desde 24/04/2026." }
-};
+// ALERTAS_FIXOS REMOVIDO — alertas agora são dinâmicos via FloodAlert
 
 const REGIOES = {
-  "Alto Solimões":  ["Tabatinga", "Tefé"],
-  "Médio Solimões": ["Manacapuru"],
-  "Rio Negro":      ["Manaus"],
-  "Baixo Amazonas": ["Itacoatiara", "Parintins", "Óbidos", "Santarém"],
+  "Alto Solimões":   ["Tabatinga", "Tefé", "Coari"],
+  "Médio Solimões":  ["Manacapuru", "Iranduba", "Careiro da Várzea"],
+  "Rio Negro":       ["Manaus", "Novo Airão", "Barcelos", "São Gabriel da Cachoeira"],
+  "Baixo Amazonas":  ["Itacoatiara", "Parintins", "Óbidos", "Santarém", "Maués", "Borba"],
+  "Rio Purus/Madeira": ["Lábrea", "Humaitá", "Manicoré", "Beruri"],
 };
 
 const CFG = {
-  "Manaus":      { lat:-3.10, lon:-60.02, rio:"Rio Negro",    cota_alerta:29.00, cota_max:29.97 },
-  "Itacoatiara": { lat:-3.14, lon:-58.44, rio:"Rio Amazonas", cota_alerta:14.00, cota_max:16.83 },
-  "Manacapuru":  { lat:-3.31, lon:-60.61, rio:"Rio Solimões", cota_alerta:21.00, cota_max:23.50 },
-  "Parintins":   { lat:-2.63, lon:-56.74, rio:"Rio Amazonas", cota_alerta:11.50, cota_max:13.80 },
-  "Óbidos":      { lat:-1.92, lon:-55.52, rio:"Rio Amazonas", cota_alerta: 9.00, cota_max:11.20 },
-  "Tefé":        { lat:-3.37, lon:-64.72, rio:"Rio Solimões", cota_alerta:14.50, cota_max:17.50 },
-  "Santarém":    { lat:-2.44, lon:-54.70, rio:"Rio Amazonas", cota_alerta: 8.50, cota_max:10.50 },
-  "Tabatinga":   { lat:-4.25, lon:-69.94, rio:"Rio Solimões", cota_alerta:11.00, cota_max:13.50 },
+  "Manaus":                    { lat:-3.10,  lon:-60.02, rio:"Rio Negro",      cota_alerta:29.00, cota_max:29.97, cota_emergencia:34.80 },
+  "Manacapuru":                { lat:-3.31,  lon:-60.61, rio:"Rio Solimões",   cota_alerta:21.00, cota_max:23.50, cota_emergencia:25.20 },
+  "Itacoatiara":               { lat:-3.14,  lon:-58.44, rio:"Rio Amazonas",   cota_alerta:14.00, cota_max:16.83, cota_emergencia:16.80 },
+  "Tabatinga":                 { lat:-4.25,  lon:-69.94, rio:"Rio Solimões",   cota_alerta:11.00, cota_max:13.50, cota_emergencia:13.20 },
+  "Óbidos":                    { lat:-1.92,  lon:-55.52, rio:"Rio Amazonas",   cota_alerta: 9.00, cota_max:11.20, cota_emergencia:10.80 },
+  "Beruri":                    { lat:-3.90,  lon:-61.28, rio:"Rio Purus",      cota_alerta:13.50, cota_max:15.80, cota_emergencia:15.50 },
+  "Parintins":                 { lat:-2.63,  lon:-56.74, rio:"Rio Amazonas",   cota_alerta:11.50, cota_max:13.80, cota_emergencia:13.80 },
+  "Tefé":                      { lat:-3.37,  lon:-64.72, rio:"Rio Solimões",   cota_alerta:14.50, cota_max:17.50, cota_emergencia:17.40 },
+  "Santarém":                  { lat:-2.44,  lon:-54.70, rio:"Rio Amazonas",   cota_alerta: 8.50, cota_max:10.50, cota_emergencia:10.20 },
+  "Coari":                     { lat:-4.09,  lon:-63.14, rio:"Rio Solimões",   cota_alerta:14.00, cota_max:16.20, cota_emergencia:16.00 },
+  "Barcelos":                  { lat:-0.98,  lon:-62.93, rio:"Rio Negro",      cota_alerta:13.50, cota_max:15.50, cota_emergencia:15.20 },
+  "São Gabriel da Cachoeira":  { lat: 0.13,  lon:-67.09, rio:"Rio Negro",      cota_alerta:11.00, cota_max:12.50, cota_emergencia:12.20 },
+  "Careiro da Várzea":         { lat:-3.74,  lon:-60.38, rio:"Rio Amazonas",   cota_alerta:28.50, cota_max:29.50, cota_emergencia:29.00 },
+  "Iranduba":                  { lat:-3.28,  lon:-60.19, rio:"Rio Solimões",   cota_alerta:20.50, cota_max:22.80, cota_emergencia:22.50 },
+  "Lábrea":                    { lat:-7.26,  lon:-64.80, rio:"Rio Purus",      cota_alerta:12.50, cota_max:14.50, cota_emergencia:14.20 },
+  "Humaitá":                   { lat:-7.51,  lon:-63.02, rio:"Rio Madeira",    cota_alerta:11.50, cota_max:13.50, cota_emergencia:13.20 },
+  "Manicoré":                  { lat:-5.81,  lon:-61.30, rio:"Rio Madeira",    cota_alerta:13.00, cota_max:15.00, cota_emergencia:14.70 },
+  "Borba":                     { lat:-4.39,  lon:-59.60, rio:"Rio Madeira",    cota_alerta:14.00, cota_max:16.00, cota_emergencia:15.70 },
+  "Novo Airão":                { lat:-2.63,  lon:-60.94, rio:"Rio Negro",      cota_alerta:20.00, cota_max:22.00, cota_emergencia:21.80 },
+  "Maués":                     { lat:-3.38,  lon:-57.72, rio:"Rio Maués-Açu",  cota_alerta: 9.00, cota_max:10.80, cota_emergencia:10.50 },
 };
 
 const CAMADAS = [
@@ -828,6 +872,118 @@ const Tip = ({ active, payload, label }) => {
   );
 };
 
+/* ══ COMPONENTE: ALERTA DINÂMICO ══════════════════════════════════════════════
+   Renderiza apenas se cota ≥ 70% da cota de alerta.
+   Calcula tipo em tempo real: Atenção / Alerta / Emergência.
+   =========================================================================== */
+function FloodAlert({ estacao, cotaAtual, cotaAlerta, cotaEmergencia }) {
+  if (!cotaAlerta || cotaAtual == null) return null;
+
+  const limiarAtencao    = cotaAlerta * 0.70;
+  const limiarAlerta     = cotaAlerta;
+  const limiarEmergencia = cotaEmergencia || cotaAlerta * 1.20;
+
+  if (cotaAtual < limiarAtencao) return null;
+
+  let tipo, titulo, descricao, cls;
+
+  if (cotaAtual >= limiarEmergencia) {
+    tipo = 'emergencia';
+    cls  = '';   // vermelho (padrão)
+    titulo = `Emergência — ${estacao}`;
+    descricao = `Cota ${cotaAtual.toFixed(2)} m ultrapassa a cota de emergência (${limiarEmergencia.toFixed(2)} m). Risco muito elevado.`;
+  } else if (cotaAtual >= limiarAlerta) {
+    tipo = 'alerta';
+    cls  = '';
+    titulo = `Alerta de enchente — ${estacao}`;
+    descricao = `Cota ${cotaAtual.toFixed(2)} m acima da cota de alerta (${cotaAlerta.toFixed(2)} m). Monitoramento intensivo necessário.`;
+  } else {
+    tipo = 'atencao';
+    cls  = 'atencao';
+    titulo = `Atenção — ${estacao}`;
+    descricao = `Cota ${cotaAtual.toFixed(2)} m se aproxima da cota de alerta (${cotaAlerta.toFixed(2)} m). Acompanhar evolução.`;
+  }
+
+  return (
+    <div className={`al-bar ${cls}`}>
+      <div className="al-ico">{tipo === 'atencao' ? '⚠' : '🚨'}</div>
+      <div>
+        <div className="al-ttl">{titulo}</div>
+        <div className="al-dsc">{descricao}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ══ COMPONENTE: TICKER DE ESTAÇÕES ══════════════════════════════════════════
+   Faixa animada com info de todas as estações.
+   Para no hover. Duplica os itens para scroll infinito suave.
+   =========================================================================== */
+function StationTicker({ estacoes, dados, config, onClickEstacao }) {
+  if (!estacoes.length) return null;
+
+  const items = estacoes.map(nome => {
+    const d  = dados[nome] || {};
+    const l  = d.dados || [];
+    const u  = l[l.length - 1] || {};
+    const co = u.cota_m ?? 0;
+    const prev = l.length > 1 ? (l[l.length - 2]?.cota_m ?? co) : co;
+    const diff = +(co - prev).toFixed(2);
+    const { c, t } = classificar(co, config[nome]);
+    return { nome, cota: co, diff, cls: c, status: t };
+  });
+
+  // Duplicar para scroll contínuo
+  const doubled = [...items, ...items];
+
+  const badgeStyle = (cls) => {
+    if (cls === 'd') return { background:'rgba(192,57,43,.35)', color:'#FF9B8F' };
+    if (cls === 'w') return { background:'rgba(196,122,30,.35)', color:'#F5C87A' };
+    return null;
+  };
+
+  return (
+    <div className="ticker-outer">
+      <div className="ticker-track">
+        {doubled.map((item, i) => (
+          <div
+            key={`${item.nome}-${i}`}
+            className="ticker-item"
+            onClick={() => onClickEstacao(item.nome)}
+          >
+            <span
+              className="ticker-name"
+              style={{ color: item.cls !== 'g' ? (item.cls === 'd' ? '#FF9B8F' : '#F5C87A') : 'rgba(237,233,225,.7)' }}
+            >
+              {item.nome}
+            </span>
+            <span className="ticker-sep"/>
+            <span
+              className="ticker-cota"
+              style={{ color: COR[item.cls] }}
+            >
+              {item.cota.toFixed(2)} m
+            </span>
+            {item.diff !== 0 && (
+              <span
+                className="ticker-var"
+                style={{ color: item.diff > 0 ? '#FF9B8F' : '#6DD99A' }}
+              >
+                {item.diff > 0 ? '▲' : '▼'} {Math.abs(item.diff).toFixed(2)}
+              </span>
+            )}
+            {item.cls !== 'g' && badgeStyle(item.cls) && (
+              <span className="ticker-badge" style={badgeStyle(item.cls)}>
+                {item.status}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ══════════════════════════════════════════════════════════════════════════ */
 export default function App() {
   const [splashDone, setSplashDone] = useState(false);
@@ -880,6 +1036,7 @@ export default function App() {
     const map = L.map('mapa-leaflet-main', { zoomControl:true, scrollWheelZoom:true }).setView([-3.5, -62], 5);
     const tl = L.tileLayer(cfg0.tile, { attribution: cfg0.attr, maxZoom:16 }).addTo(map);
     tileLayerRef.current = tl;
+    // Itera sobre TODOS os CFG, não filtra por sace_bacia
     Object.entries(CFG).forEach(([nome, cfg]) => {
       const info = dadosAtual[nome] || {};
       const lista = info.dados || [];
@@ -957,10 +1114,9 @@ export default function App() {
   const cfgC    = CFG[cidade];
   const { c:cl, t:stTxt, pct } = classificar(cota, cfgC);
   const stColor = cl==='g' ? 'var(--teal)' : cl==='w' ? 'var(--amber)' : 'var(--red)';
-  const al      = ALERTAS_FIXOS[cidade];
   const pico    = estimarPico(lista);
   const fonte   = info.fonte || '';
-  const fonteLabel = { sace:'SACE/SGB', 'open-meteo':'Open-Meteo', fallback:'Cache' }[fonte] || fonte || '—';
+  const fonteLabel = { sace:'SACE/SGB', 'open-meteo':'Open-Meteo', fallback:'Cache', ana:'ANA HidroWS' }[fonte] || fonte || '—';
   const isSace  = fonte === 'sace';
   const updateInfo = getUpdateTimes(fonte);
   const ultimaDataStr = ult.data ? new Date(ult.data + 'T12:00:00').toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' }) : '—';
@@ -986,7 +1142,6 @@ export default function App() {
     return { nome, cota: co, alerta: CFG[nome]?.cota_alerta || 0, pct: Math.round((co / (CFG[nome]?.cota_max||1))*100), status:t, cls:c, var: +(co - prev).toFixed(3), fonte: d.fonte || 'fallback' };
   });
 
-  /* FIX 4: nomes completos no dashboard (sem truncagem) */
   const cotaBarData = allDatasets.map(d => ({ name: d.nome, cota: d.cota, alerta: d.alerta, fill: COR[d.cls] }));
   const overallMax  = allDatasets.length ? Math.max(...allDatasets.map(d => d.cota)) : 0;
   const emAlerta    = allDatasets.filter(d => d.cls === 'd').length;
@@ -997,6 +1152,9 @@ export default function App() {
   const logEntries = gerarLog(dados, estacoes);
   const logFiltrado = logEntries.filter(e => logFiltroFonte === 'todas' || e.fonte === logFiltroFonte);
   const cacheCount = logEntries.filter(e => e.fonte === 'fallback').length;
+
+  // Estações destacadas no hero (primeiras 5)
+  const heroEstacoes = estacoes.slice(0, 5);
 
   if (loading && !estacoes.length) return (
     <><style>{css}</style>
@@ -1034,72 +1192,119 @@ export default function App() {
     /* ═══ HOME ═══════════════════════════════════════════════════════════════ */
     if (pagina === 'home') return (
       <div className="home-page">
-        {/* FIX 1: Layout lateral — texto esquerda, logo direita. Sem nome duplicado. Fundo mais claro. */}
         <div className="home-hero">
-          {/* Coluna esquerda: texto */}
-          <div className="home-hero-left">
-            <div className="home-eyebrow">Plataforma de Monitoramento Hidrológico</div>
+          <div className="home-hero-content">
+            {/* Coluna esquerda: texto */}
+            <div className="home-hero-left">
+              <div className="home-eyebrow">Plataforma de Monitoramento Hidrológico</div>
 
-            <div className="home-title">
-              A Amazônia <span className="ht-acc">monitorada</span><br/>
-              em <span className="ht-teal">tempo real.</span>
+              <div className="home-title">
+                A Amazônia <span className="ht-acc">monitorada</span><br/>
+                em <span className="ht-teal">tempo real.</span>
+              </div>
+
+              <p className="home-desc">
+                FluviAM acompanha cotas, alertas de enchente e tendências em {estacoes.length || 8} estações
+                fluviométricas — do Rio Negro ao Solimões.
+              </p>
+
+              <div className="home-cta-row">
+                <button className="home-cta-primary" onClick={() => setPagina('mapa')}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6z M9 3v15 M15 6v15"/>
+                  </svg>
+                  Ver Mapa ao Vivo
+                </button>
+                <button className="home-cta-secondary" onClick={() => setPagina('dashboard')}>
+                  Acessar Dashboard
+                </button>
+                {alertCount > 0 && (
+                  <button className="btn-sm" style={{ borderColor:'rgba(192,57,43,.4)', color:'var(--red)', background:'rgba(192,57,43,.08)' }} onClick={() => setPagina('alertas')}>
+                    ⚠ {alertCount} alerta{alertCount > 1 ? 's' : ''}
+                  </button>
+                )}
+              </div>
+
+              <div className="home-stats">
+                {[
+                  { val: estacoes.length || 8,                               lbl: 'Estações' },
+                  { val: alertCount,                                          lbl: 'Em alerta', color: alertCount > 0 ? '#D94F3D' : '#3DB89A' },
+                  { val: overallMax > 0 ? `${overallMax.toFixed(1)} m` : '—', lbl: 'Cota máx. obs.' },
+                  { val: 'Ao vivo',                                           lbl: 'SACE / SGB', color:'#3DB89A' },
+                ].map((s,i) => (
+                  <div key={i} className="home-stat">
+                    <div className="home-stat-val" style={s.color ? { color:s.color } : {}}>{s.val}</div>
+                    <div className="home-stat-lbl">{s.lbl}</div>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <p className="home-desc">
-              FluviAM acompanha cotas, alertas de enchente e tendências em {estacoes.length || 8} estações
-              fluviométricas — do Rio Negro ao Solimões.
-            </p>
+            {/* Divisor vertical */}
+            <div className="home-hero-divider"/>
 
-            <div className="home-cta-row">
-              <button className="home-cta-primary" onClick={() => setPagina('mapa')}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6z M9 3v15 M15 6v15"/>
-                </svg>
-                Ver Mapa ao Vivo
-              </button>
-              <button className="home-cta-secondary" onClick={() => setPagina('dashboard')}>
-                Acessar Dashboard
-              </button>
-              {alertCount > 0 && (
-                <button className="btn-sm" style={{ borderColor:'rgba(192,57,43,.4)', color:'var(--red)', background:'rgba(192,57,43,.08)' }} onClick={() => setPagina('alertas')}>
-                  ⚠ {alertCount} alerta{alertCount > 1 ? 's' : ''}
+            {/* Coluna direita: mini-cards de estações em tempo real */}
+            <div className="home-hero-right">
+              <div style={{ fontSize:9, letterSpacing:'.12em', textTransform:'uppercase', color:'rgba(255,255,255,.25)', fontFamily:"'DM Mono',monospace", marginBottom:4 }}>
+                Leitura atual
+              </div>
+              {heroEstacoes.map(nome => {
+                const d  = dados[nome] || {};
+                const l  = d.dados || [];
+                const u  = l[l.length - 1] || {};
+                const co = u.cota_m ?? 0;
+                const prev = l.length > 1 ? (l[l.length-2]?.cota_m ?? co) : co;
+                const diff = +(co - prev).toFixed(2);
+                const { c } = classificar(co, CFG[nome]);
+                return (
+                  <div
+                    key={nome}
+                    className="hero-station-card"
+                    onClick={() => { setCidade(nome); setPagina('estacao'); }}
+                  >
+                    <div className="hero-sc-dot" style={{ background: COR[c] }}/>
+                    <div className="hero-sc-name">{nome}</div>
+                    <div className="hero-sc-cota" style={{ color: COR[c] }}>
+                      {co.toFixed(2)} m
+                    </div>
+                    {diff !== 0 && (
+                      <div
+                        className="hero-sc-var"
+                        style={{ color: diff > 0 ? '#FF9B8F' : '#6DD99A' }}
+                      >
+                        {diff > 0 ? '▲' : '▼'}{Math.abs(diff).toFixed(2)}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {estacoes.length > 5 && (
+                <button
+                  onClick={() => setPagina('rede')}
+                  style={{
+                    marginTop:4, background:'transparent',
+                    border:'1px solid rgba(255,255,255,.1)',
+                    color:'rgba(255,255,255,.35)', borderRadius:6,
+                    padding:'6px 12px', fontSize:10, cursor:'pointer',
+                    fontFamily:"'DM Mono',monospace", letterSpacing:'.06em',
+                    textTransform:'uppercase', transition:'all .15s',
+                  }}
+                  onMouseEnter={e => e.target.style.color='rgba(255,255,255,.65)'}
+                  onMouseLeave={e => e.target.style.color='rgba(255,255,255,.35)'}
+                >
+                  +{estacoes.length - 5} estações →
                 </button>
               )}
             </div>
-
-            <div className="home-stats">
-              {[
-                { val: estacoes.length || 8,                               lbl: 'Estações' },
-                { val: alertCount,                                          lbl: 'Em alerta', color: alertCount > 0 ? '#D94F3D' : '#3DB89A' },
-                { val: overallMax > 0 ? `${overallMax.toFixed(1)} m` : '—', lbl: 'Cota máx. obs.' },
-                { val: 'Ao vivo',                                           lbl: 'SACE / SGB', color:'#3DB89A' },
-              ].map((s,i) => (
-                <div key={i} className="home-stat">
-                  <div className="home-stat-val" style={s.color ? { color:s.color } : {}}>{s.val}</div>
-                  <div className="home-stat-lbl">{s.lbl}</div>
-                </div>
-              ))}
-            </div>
           </div>
 
-          {/* Divisor vertical */}
-          <div className="home-hero-divider"/>
-
-          {/* Coluna direita: apenas visual/logo — SEM nome FluviAM */}
-          <div className="home-hero-right">
-            <div className="home-logo-visual">
-              <BanzeiroWave width={240} dark={true} />
-              <div className="home-logo-subtitle">Monitor Hidrológico · Bacia Amazônica</div>
-            </div>
-          </div>
-
-          {/* Indicador de scroll */}
-          <div className="home-scroll-hint">
-            <span>rolar</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" strokeLinecap="round">
-              <path d="M6 9l6 6 6-6"/>
-            </svg>
-          </div>
+          {/* Ticker de estações — substitui o scroll hint */}
+          <StationTicker
+            estacoes={estacoes}
+            dados={dados}
+            config={CFG}
+            onClickEstacao={(nome) => { setCidade(nome); setPagina('estacao'); }}
+          />
         </div>
 
         <div className="home-features">
@@ -1133,7 +1338,7 @@ export default function App() {
             {[
               { cor:'#1B7C6C', txt:'Dados em tempo real via SACE/SGB' },
               { cor:'#C47A1E', txt:'Alertas automáticos de enchente' },
-              { cor:'#C0392B', txt:'Monitoramento de 8 municípios' },
+              { cor:'#C0392B', txt:`Monitoramento de ${estacoes.length || 8} municípios` },
               { cor:'#2A7A3A', txt:'Previsão de pico por tendência' },
               { cor:'#1D4E6E', txt:'Histórico completo de cotas' },
             ].map((item,i) => (
@@ -1182,18 +1387,26 @@ export default function App() {
       </div>
     );
 
-    /* ═══ ESTAÇÃO — FIX 2 ════════════════════════════════════════════════════ */
+    /* ═══ ESTAÇÃO ════════════════════════════════════════════════════════════ */
     if (pagina === 'estacao') return (
       <>
         <nav className="city-tabs">
-          {estacoes.map(c => (
-            <button key={c} className={`c-tab${c === cidade ? ' active' : ''}`} onClick={() => setCidade(c)}>
-              {c}{ALERTAS_FIXOS[c] && <span className="cdot"/>}
-            </button>
-          ))}
+          {estacoes.map(c => {
+            // Badge na tab: mostra ponto vermelho se estação em alerta/atenção
+            const d = dados[c] || {};
+            const l = d.dados || [];
+            const u = l[l.length-1] || {};
+            const co = u.cota_m ?? 0;
+            const { cls: tc } = classificar(co, CFG[c]) || {};
+            const emAlertaTab = tc === 'd' || tc === 'w';
+            return (
+              <button key={c} className={`c-tab${c === cidade ? ' active' : ''}`} onClick={() => setCidade(c)}>
+                {c}{emAlertaTab && <span className="cdot" style={{ background: tc === 'd' ? 'var(--red)' : 'var(--amber)' }}/>}
+              </button>
+            );
+          })}
         </nav>
 
-        {/* FIX 2: barra de atualização ABAIXO dos tabs, com data/hora bem visíveis */}
         {lista.length > 0 && (
           <div className="update-bar">
             <div className="update-bar-inner">
@@ -1219,8 +1432,8 @@ export default function App() {
               </div>
             </div>
             <div className="update-bar-right">
-              <span className={`fonte-badge ${isSace ? 'fonte-sace' : fonte === 'open-meteo' ? 'fonte-openmeteo' : 'fonte-fallback'}`}>
-                {isSace ? '✓ Dados reais SACE' : fonte === 'open-meteo' ? '~ Estimativa Open-Meteo' : '⚠ Cache local'}
+              <span className={`fonte-badge ${isSace ? 'fonte-sace' : fonte === 'open-meteo' ? 'fonte-openmeteo' : fonte === 'ana' ? 'fonte-ana' : 'fonte-fallback'}`}>
+                {isSace ? '✓ Dados reais SACE' : fonte === 'open-meteo' ? '~ Estimativa Open-Meteo' : fonte === 'ana' ? '✓ ANA HidroWS' : '⚠ Cache local'}
               </span>
             </div>
           </div>
@@ -1234,12 +1447,13 @@ export default function App() {
           {loading && <div className="spinner" style={{ width:15, height:15 }}/>}
         </div>
 
-        {al && (
-          <div className={`al-bar${al.tipo === 'warn' ? ' warn' : ''}`}>
-            <div className="al-ico">⚠</div>
-            <div><div className="al-ttl">{al.titulo}</div><div className="al-dsc">{al.desc}</div></div>
-          </div>
-        )}
+        {/* ALERTA DINÂMICO — substitui ALERTAS_FIXOS */}
+        <FloodAlert
+          estacao={cidade}
+          cotaAtual={cota}
+          cotaAlerta={cfgC?.cota_alerta}
+          cotaEmergencia={cfgC?.cota_emergencia}
+        />
 
         {!loading && lista.length === 0
           ? <div className="state"><span>Sem dados para <strong>{cidade}</strong>.</span></div>
@@ -1263,8 +1477,8 @@ export default function App() {
               <div className="kpi">
                 <div className="kpi-lbl">Fonte</div>
                 <div className="kpi-val" style={{ fontSize:12, paddingTop:4 }}>{fonteLabel}</div>
-                <div className={`fonte-badge ${isSace ? 'fonte-sace' : fonte === 'open-meteo' ? 'fonte-openmeteo' : 'fonte-fallback'}`} style={{ display:'inline-flex' }}>
-                  {isSace ? '✓ dados reais' : fonte === 'open-meteo' ? '~ estimativa' : '⚠ cache'}
+                <div className={`fonte-badge ${isSace ? 'fonte-sace' : fonte === 'open-meteo' ? 'fonte-openmeteo' : fonte === 'ana' ? 'fonte-ana' : 'fonte-fallback'}`} style={{ display:'inline-flex' }}>
+                  {isSace ? '✓ dados reais' : fonte === 'open-meteo' ? '~ estimativa' : fonte === 'ana' ? '✓ ANA' : '⚠ cache'}
                 </div>
               </div>
             </div>
@@ -1381,7 +1595,7 @@ export default function App() {
       </>
     );
 
-    /* ═══ REDE DE ESTAÇÕES — FIX 3 ══════════════════════════════════════════ */
+    /* ═══ REDE DE ESTAÇÕES ═══════════════════════════════════════════════════ */
     if (pagina === 'rede') return (
       <>
         <div className="sec-ttl">Rede de Estações</div>
@@ -1405,7 +1619,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* FIX 3: cabeçalho estilizado com fundo */}
         <div className="est-row-hdr">
           <span>Estação / Rio</span>
           <span style={{ textAlign:'right' }}>Cota (m)</span>
@@ -1439,7 +1652,7 @@ export default function App() {
       </>
     );
 
-    /* ═══ LOG DE ATUALIZAÇÕES — FIX 5 ═══════════════════════════════════════ */
+    /* ═══ LOG DE ATUALIZAÇÕES ════════════════════════════════════════════════ */
     if (pagina === 'log') return (
       <>
         <div className="log-header">
@@ -1461,7 +1674,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* FIX 5: card de cache com destaque de alerta quando há problema */}
         <div className="log-summary-row">
           <div className="log-sum-card">
             <div className="log-sum-val" style={{ color:'var(--teal)' }}>{logEntries.filter(e => e.fonte === 'sace').length}</div>
@@ -1525,7 +1737,7 @@ export default function App() {
       </>
     );
 
-    /* ═══ DASHBOARD — FIX 4 ══════════════════════════════════════════════════ */
+    /* ═══ DASHBOARD ══════════════════════════════════════════════════════════ */
     if (pagina === 'dashboard') return (
       <>
         <div className="sec-ttl">Dashboard analítico</div>
@@ -1537,19 +1749,13 @@ export default function App() {
           <div className="dash-kpi"><div className="dash-kpi-lbl">Cota máxima</div><div className="dash-kpi-val">{overallMax.toFixed(2)}</div><div className="dash-kpi-sub">metros</div></div>
         </div>
         <div className="analytics-grid">
-          {/* FIX 4: nomes completos no eixo X, angle para não truncar */}
           <div className="card analytics-wide">
             <div className="card-hdr"><div><div className="card-ttl">Cota atual vs. cota de alerta</div><div className="card-sub">todas as estações</div></div></div>
             <div style={{ height:220 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={cotaBarData} margin={{ top:4, right:8, left:0, bottom:28 }}>
                   <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false}/>
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fontSize:10, fill:'var(--muted)', fontFamily:'DM Mono,monospace' }}
-                    axisLine={false} tickLine={false}
-                    angle={-20} textAnchor="end" interval={0}
-                  />
+                  <XAxis dataKey="name" tick={{ fontSize:10, fill:'var(--muted)', fontFamily:'DM Mono,monospace' }} axisLine={false} tickLine={false} angle={-20} textAnchor="end" interval={0}/>
                   <YAxis tick={{ fontSize:10, fill:'var(--muted)', fontFamily:'DM Mono,monospace' }} axisLine={false} tickLine={false} width={34}/>
                   <Tooltip content={<Tip/>}/>
                   <Bar dataKey="cota" name="Cota (m)" fill="var(--teal)" radius={[3,3,0,0]}/>
@@ -1566,12 +1772,7 @@ export default function App() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={varData} margin={{ top:4, right:8, left:0, bottom:28 }}>
                   <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false}/>
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fontSize:10, fill:'var(--muted)', fontFamily:'DM Mono,monospace' }}
-                    axisLine={false} tickLine={false}
-                    angle={-20} textAnchor="end" interval={0}
-                  />
+                  <XAxis dataKey="name" tick={{ fontSize:10, fill:'var(--muted)', fontFamily:'DM Mono,monospace' }} axisLine={false} tickLine={false} angle={-20} textAnchor="end" interval={0}/>
                   <YAxis tick={{ fontSize:10, fill:'var(--muted)', fontFamily:'DM Mono,monospace' }} axisLine={false} tickLine={false} width={38}/>
                   <Tooltip content={<Tip/>}/>
                   <ReferenceLine y={0} stroke="var(--bordm)" strokeWidth={1}/>
@@ -1581,13 +1782,16 @@ export default function App() {
             </div>
           </div>
           <div className="card">
-            <div className="card-hdr"><div><div className="card-ttl">Histórico — 30 dias</div>
-              <div className="card-sub">
-                <select className="filtro-sel" style={{ padding:'2px 8px', fontSize:11 }} value={cidade} onChange={e => setCidade(e.target.value)}>
-                  {estacoes.map(n => <option key={n} value={n}>{n}</option>)}
-                </select>
+            <div className="card-hdr">
+              <div>
+                <div className="card-ttl">Histórico — 30 dias</div>
+                <div className="card-sub">
+                  <select className="filtro-sel" style={{ padding:'2px 8px', fontSize:11 }} value={cidade} onChange={e => setCidade(e.target.value)}>
+                    {estacoes.map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </div>
               </div>
-            </div></div>
+            </div>
             <div style={{ height:180 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={listaDash} margin={{ top:4, right:8, left:0, bottom:0 }}>
@@ -1685,14 +1889,14 @@ export default function App() {
   );
 }
 
-/* ── Componente de linha da rede ────────────────────────────────────────────── */
+/* ── Componente de linha da rede ─────────────────────────────────────────── */
 function EstacaoRow({ d, dados, onClick }) {
   const info = dados[d.nome] || {};
   const lista = info.dados || [];
   const prev = lista.length > 1 ? (lista[lista.length-2]?.cota_m ?? d.cota) : d.cota;
   const diff = d.cota - prev;
-  const fonteC = d.fonte === 'sace' ? 'fonte-sace' : d.fonte === 'open-meteo' ? 'fonte-openmeteo' : 'fonte-fallback';
-  const fonteL = { sace:'SACE', 'open-meteo':'Open-Meteo', fallback:'Cache' }[d.fonte] || d.fonte;
+  const fonteC = d.fonte === 'sace' ? 'fonte-sace' : d.fonte === 'open-meteo' ? 'fonte-openmeteo' : d.fonte === 'ana' ? 'fonte-ana' : 'fonte-fallback';
+  const fonteL = { sace:'SACE', 'open-meteo':'Open-Meteo', fallback:'Cache', ana:'ANA' }[d.fonte] || d.fonte;
   const statusBg = d.cls === 'd' ? 'var(--redL)' : d.cls === 'w' ? 'var(--amberL)' : 'var(--tealL)';
   const statusColor = { g:'var(--teal)', w:'var(--amber)', d:'var(--red)' }[d.cls];
 
@@ -1720,4 +1924,3 @@ function EstacaoRow({ d, dados, onClick }) {
     </div>
   );
 }
- 

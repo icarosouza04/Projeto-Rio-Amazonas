@@ -165,3 +165,4 @@ def buscar_open_meteo(lat, lon, dias=None, q_min=None):
     except Exception as e:
         logger.error(f"Erro Open-Meteo: {e}")
         return pd.DataFrame()
+

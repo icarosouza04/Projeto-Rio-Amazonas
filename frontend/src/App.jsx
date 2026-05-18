@@ -2,40 +2,37 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  ReferenceLine,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
 
-/* ─── CSS ─────────────────────────────────────────────────────────────────── */
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Lora:ital,wght@0,500;0,600;1,400;1,500&family=DM+Mono:wght@400;500&display=swap');
 
 :root {
-  --bg:      #F5F3EF;
-  --surface: #FFFFFF;
-  --surf2:   #EEEBE4;
-  --border:  rgba(26,23,20,0.08);
-  --bordm:   rgba(26,23,20,0.14);
+  --bg:      #F5F4F1;
+  --surface: #FAFAF8;
+  --surf2:   #EDECEA;
+  --border:  rgba(26,23,20,0.07);
+  --bordm:   rgba(26,23,20,0.11);
   --text:    #1A1714;
-  --muted:   #8A8278;
-  --faint:   #C2BCB2;
-  --teal:    #1B7C6C;
-  --tealL:   #E3F2EF;
-  --amber:   #C47A1E;
-  --amberL:  #FBF0DF;
+  --muted:   #7A7470;
+  --faint:   #C0BAB2;
+  --teal:    #1A6B5C;
+  --tealL:   #E2F0ED;
+  --amber:   #B8722A;
+  --amberL:  #F9EDD8;
   --red:     #C0392B;
   --redL:    #FCEAE8;
   --green:   #2A7A3A;
   --navy:    #1D4E6E;
   --navyL:   #E3EFF7;
-  --sid:     #2A2218;
-  --sid2:    #332A1E;
-  --r: 8px;
+  --sid:     #18171A;
+  --r: 10px;
 }
 [data-theme=dark]{
-  --bg:      #0F0E0C;
-  --surface: #1A1916;
-  --surf2:   #232018;
+  --bg:      #111013;
+  --surface: #1A191C;
+  --surf2:   #222025;
   --border:  rgba(255,255,255,0.07);
   --bordm:   rgba(255,255,255,0.13);
   --text:    #EDE9E1;
@@ -50,38 +47,17 @@ const css = `
   --green:   #3A9A4A;
   --navy:    #4A9DC4;
   --navyL:   rgba(29,95,172,0.15);
-  --sid:     #1E1810;
-  --sid2:    #261E14;
+  --sid:     #0E0D10;
 }
 
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{
-  font-family:'Outfit',system-ui,sans-serif;
-  font-size:13px;line-height:1.5;
-  background:var(--bg);color:var(--text);
-  -webkit-font-smoothing:antialiased;
-  transition:background .2s,color .2s;
-}
+body{font-family:'Outfit',system-ui,sans-serif;font-size:13px;line-height:1.5;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;transition:background .2s,color .2s;}
 
-/* ══ SPLASH ══ */
-.splash{
-  position:fixed;inset:0;z-index:9999;
-  background:#1A1208;
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  gap:28px;
-  transition:opacity .9s cubic-bezier(.4,0,.2,1), visibility .9s;
-}
-.splash.hide{ opacity:0; visibility:hidden; pointer-events:none; }
-.splash-inner{
-  display:flex;flex-direction:column;align-items:center;gap:20px;
-  animation:splashReveal 1s cubic-bezier(.16,1,.3,1) both;
-}
-@keyframes splashReveal{
-  from{opacity:0;transform:translateY(24px)}
-  to{opacity:1;transform:translateY(0)}
-}
+.splash{position:fixed;inset:0;z-index:9999;background:#111013;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;transition:opacity .9s,visibility .9s;}
+.splash.hide{opacity:0;visibility:hidden;pointer-events:none;}
+.splash-inner{display:flex;flex-direction:column;align-items:center;gap:20px;animation:splashReveal 1s cubic-bezier(.16,1,.3,1) both;}
+@keyframes splashReveal{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 .bzr-w1{stroke-dasharray:340;stroke-dashoffset:340;animation:flowWave 1.6s cubic-bezier(.4,0,.2,1) .1s forwards}
 .bzr-w2{stroke-dasharray:300;stroke-dashoffset:300;animation:flowWave 1.8s cubic-bezier(.4,0,.2,1) .3s forwards}
 .bzr-w3{stroke-dasharray:260;stroke-dashoffset:260;animation:flowWave 2s cubic-bezier(.4,0,.2,1) .55s forwards}
@@ -95,219 +71,94 @@ body{
 @keyframes popDot{to{r:8}}
 @keyframes popDotIn{to{r:4}}
 @keyframes nameReveal{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.splash-tagline{
-  font-size:10px;letter-spacing:.22em;text-transform:uppercase;
-  color:rgba(237,233,225,.2);
-  font-family:'DM Mono',monospace;
-  text-align:center;
-  opacity:0;animation:nameReveal .5s ease 2s forwards;
-}
-.splash-bar{
-  width:120px;height:1.5px;
-  background:rgba(255,255,255,.06);
-  border-radius:99px;overflow:hidden;
-  opacity:0;animation:nameReveal .4s ease 1.8s forwards;
-}
-.splash-bar-fill{
-  height:100%;width:0%;
-  background:linear-gradient(90deg,#1B7C6C,#C47A1E);
-  border-radius:99px;
-  animation:splashLoad 2s .5s cubic-bezier(.4,0,.2,1) forwards;
-}
+.splash-tagline{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(237,233,225,.2);font-family:'DM Mono',monospace;text-align:center;opacity:0;animation:nameReveal .5s ease 2s forwards;}
+.splash-bar{width:120px;height:1.5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;opacity:0;animation:nameReveal .4s ease 1.8s forwards;}
+.splash-bar-fill{height:100%;width:0%;background:linear-gradient(90deg,#1B7C6C,#C47A1E);border-radius:99px;animation:splashLoad 2s .5s cubic-bezier(.4,0,.2,1) forwards;}
 @keyframes splashLoad{to{width:100%}}
 
-/* ══ SHELL ══ */
 .shell{display:flex;height:100vh;overflow:hidden}
 
-/* SIDEBAR */
-.sidebar{
-  width:210px;flex-shrink:0;
-  background:var(--sid);
-  display:flex;flex-direction:column;
-  border-right:1px solid rgba(255,255,255,.04);
-  overflow:hidden;
-  transition:width .25s cubic-bezier(.4,0,.2,1);
-}
+.sidebar{width:216px;flex-shrink:0;background:var(--sid);display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.05);overflow:hidden;transition:width .25s cubic-bezier(.4,0,.2,1);}
 .sidebar.closed{width:0}
-.sid-logo{
-  padding:16px 14px 12px;
-  border-bottom:1px solid rgba(255,255,255,.05);
-  display:flex;align-items:center;gap:10px;flex-shrink:0;
-  cursor:pointer;
-}
-.sid-logo:hover .sid-bzr-wrap{ filter:brightness(1.15); }
-.sid-bzr-wrap{ flex-shrink:0; transition:filter .2s; }
-.sid-name{ display:flex;flex-direction:column;gap:2px; min-width:0; }
-.sid-wordmark{
-  font-family:'Lora',Georgia,serif;
-  font-size:18px;font-weight:600;letter-spacing:.01em;
-  color:#EDE9E1;white-space:nowrap;line-height:1;
-}
+.sid-logo{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:10px;flex-shrink:0;cursor:pointer;}
+.sid-logo:hover .sid-bzr-wrap{filter:brightness(1.15);}
+.sid-bzr-wrap{flex-shrink:0;transition:filter .2s;}
+.sid-name{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.sid-wordmark{font-family:'Lora',Georgia,serif;font-size:19px;font-weight:600;letter-spacing:.01em;color:#EDE9E1;white-space:nowrap;line-height:1;}
 .sid-wordmark .sw{color:#C47A1E;font-style:italic;font-weight:500}
 .sid-wordmark .sb{color:#3DB89A}
-.sid-sub{font-size:9px;color:rgba(255,255,255,.22);text-transform:uppercase;letter-spacing:.08em;font-family:'DM Mono',monospace}
-
-.sid-sec{padding:14px 10px 4px}
-.sid-sec-lbl{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.18);padding:0 6px;margin-bottom:4px}
-.nav-btn{
-  display:flex;align-items:center;gap:9px;
-  padding:7px 10px;border-radius:6px;
-  color:rgba(255,255,255,.35);font-size:12px;
-  cursor:pointer;transition:all .15s;
-  margin-bottom:1px;white-space:nowrap;
-  border:none;background:transparent;width:100%;font-family:inherit;text-align:left;
-}
-.nav-btn:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.65)}
-.nav-btn.active{background:rgba(61,184,154,.12);color:#5DD5C4}
+.sid-sub{font-size:9px;color:rgba(255,255,255,.2);text-transform:uppercase;letter-spacing:.08em;font-family:'DM Mono',monospace}
+.sid-sec{padding:16px 10px 4px}
+.sid-sec-lbl{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.15);padding:0 6px;margin-bottom:5px}
+.nav-btn{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;color:rgba(255,255,255,.32);font-size:12px;cursor:pointer;transition:all .15s;margin-bottom:1px;white-space:nowrap;border:none;background:transparent;width:100%;font-family:inherit;text-align:left;}
+.nav-btn:hover{background:rgba(255,255,255,.05);color:rgba(255,255,255,.62)}
+.nav-btn.active{background:rgba(61,184,154,.1);color:#5DD5C4}
 .nav-ico{width:15px;height:15px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
-.nav-badge{
-  margin-left:auto;background:var(--red);color:#fff;
-  font-size:9px;font-weight:600;padding:1px 5px;border-radius:99px;min-width:16px;text-align:center;
-}
-.sid-footer{
-  margin-top:auto;padding:12px 10px;
-  border-top:1px solid rgba(255,255,255,.05);flex-shrink:0;
-}
-.sid-status{
-  display:flex;align-items:center;gap:8px;
-  padding:7px 10px;background:rgba(255,255,255,.03);border-radius:6px;
-}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:9px;font-weight:600;padding:1px 5px;border-radius:99px;min-width:16px;text-align:center;}
+.sid-footer{margin-top:auto;padding:12px 10px;border-top:1px solid rgba(255,255,255,.05);flex-shrink:0;}
+.sid-status{display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(255,255,255,.03);border-radius:7px;}
 .s-dot{width:6px;height:6px;border-radius:50%;background:#3DB87C;animation:blink 2.5s ease infinite;flex-shrink:0}
 .s-dot.off{background:var(--red);animation:none}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
 .s-txt{font-size:11px;color:rgba(255,255,255,.3);white-space:nowrap}
 .s-val{font-size:10px;color:rgba(255,255,255,.45);margin-left:auto;font-family:'DM Mono',monospace}
 
-/* MAIN */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-.topbar{
-  background:var(--surface);border-bottom:1px solid var(--border);
-  padding:10px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0;
-}
-.menu-btn{
-  width:30px;height:30px;border-radius:6px;
-  border:1px solid var(--bordm);background:transparent;
-  cursor:pointer;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:4px;flex-shrink:0;transition:background .15s;
-}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.menu-btn{width:30px;height:30px;border-radius:7px;border:1px solid var(--bordm);background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex-shrink:0;transition:background .15s;}
 .menu-btn:hover{background:var(--surf2)}
 .menu-btn span{display:block;width:13px;height:1.5px;background:var(--text);border-radius:99px}
 .topbar-info{flex:1;min-width:0}
 .topbar-sub{font-size:11px;color:var(--muted)}
 .topbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .badge{font-size:11px;font-weight:500;padding:3px 9px;border-radius:99px;white-space:nowrap}
-.b-red  {background:var(--redL);color:var(--red)}
-.b-teal {background:var(--tealL);color:var(--teal)}
-.b-amb  {background:var(--amberL);color:var(--amber)}
-.b-navy {background:var(--navyL);color:var(--navy)}
-.btn-sm{
-  padding:5px 12px;border-radius:99px;
-  border:1px solid var(--bordm);background:var(--surface);
-  color:var(--muted);font-family:inherit;font-size:11px;
-  cursor:pointer;transition:all .15s;white-space:nowrap;
-}
+.b-red{background:var(--redL);color:var(--red)}
+.b-teal{background:var(--tealL);color:var(--teal)}
+.b-amb{background:var(--amberL);color:var(--amber)}
+.b-navy{background:var(--navyL);color:var(--navy)}
+.btn-sm{padding:5px 12px;border-radius:99px;border:1px solid var(--bordm);background:var(--surface);color:var(--muted);font-family:inherit;font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .btn-sm:hover{background:var(--surf2);color:var(--text)}
-.filtro-sel{
-  background:var(--surface);border:1px solid var(--bordm);
-  color:var(--text);padding:5px 11px;border-radius:99px;
-  font-family:inherit;font-size:11px;cursor:pointer;outline:none;
-}
+.filtro-sel{background:var(--surface);border:1px solid var(--bordm);color:var(--text);padding:5px 11px;border-radius:99px;font-family:inherit;font-size:11px;cursor:pointer;outline:none;}
+.scroll{flex:1;overflow-y:auto;padding:20px 24px 56px;scrollbar-width:thin;scrollbar-color:var(--faint) transparent}
 
-.scroll{flex:1;overflow-y:auto;padding:18px 22px 56px;scrollbar-width:thin;scrollbar-color:var(--faint) transparent}
-
-/* CITY TABS */
-.city-tabs{
-  display:flex;gap:0;overflow-x:auto;scrollbar-width:none;
-  border-bottom:1px solid var(--border);margin-bottom:0;
-}
-.city-tabs::-webkit-scrollbar{display:none}
-.c-tab{
-  padding:9px 14px;border:none;border-bottom:2px solid transparent;
-  background:transparent;font-family:inherit;font-size:12px;
-  color:var(--muted);cursor:pointer;white-space:nowrap;
-  transition:all .15s;display:flex;align-items:center;gap:5px;flex-shrink:0;
-}
+.city-tabs{display:flex;gap:0;overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--faint) transparent;border-bottom:1px solid var(--border);flex-shrink:0;}
+.city-tabs::-webkit-scrollbar{height:3px}
+.city-tabs::-webkit-scrollbar-thumb{background:var(--faint);border-radius:99px}
+.c-tab{padding:10px 14px;border:none;border-bottom:2px solid transparent;background:transparent;font-family:inherit;font-size:12px;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:5px;flex-shrink:0;}
 .c-tab:hover{color:var(--text)}
 .c-tab.active{color:var(--text);border-bottom-color:var(--teal);font-weight:500}
-.c-tab .cdot{width:5px;height:5px;border-radius:50%;background:var(--red);display:inline-block}
+.c-tab .cdot{width:5px;height:5px;border-radius:50%;display:inline-block}
 
-/* ══ ALERTA DINÂMICO ══ */
-.al-bar{
-  display:flex;align-items:flex-start;gap:10px;
-  padding:10px 14px;border-radius:var(--r);
-  border-left:3px solid var(--red);background:var(--redL);
-  margin-bottom:16px;
-}
-.al-bar.warn{border-left-color:var(--amber);background:var(--amberL)}
+.al-bar{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-radius:var(--r);border-left:3px solid var(--red);background:var(--redL);margin-bottom:16px;}
 .al-bar.atencao{border-left-color:var(--amber);background:var(--amberL)}
 .al-ico{font-size:13px;flex-shrink:0;margin-top:1px}
 .al-ttl{font-size:12px;font-weight:500;color:var(--red);margin-bottom:2px}
-.al-bar.warn .al-ttl,.al-bar.atencao .al-ttl{color:var(--amber)}
+.al-bar.atencao .al-ttl{color:var(--amber)}
 .al-dsc{font-size:11px;color:var(--muted);line-height:1.5}
 
 .filtro-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
 .filtro-lbl{font-size:11px;color:var(--muted)}
 
-/* UPDATE BAR */
-.update-bar{
-  display:flex;align-items:center;gap:0;
-  background:var(--surface);
-  border-bottom:1px solid var(--border);
-  margin-bottom:16px;
-  flex-wrap:wrap;
-  padding:0;
-}
-.update-bar-inner{
-  display:flex;align-items:center;gap:12px;
-  padding:8px 16px;
-  flex:1;flex-wrap:wrap;
-}
-.update-bar .u-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:blink 2.5s ease infinite;flex-shrink:0}
-.update-bar .u-item{font-size:11px;color:var(--text);display:flex;align-items:center;gap:5px}
-.update-bar .u-sep{width:1px;height:14px;background:var(--border);flex-shrink:0}
-.update-bar .u-label{font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.06em}
-.update-bar-right{
-  padding:8px 16px;
-  border-left:1px solid var(--border);
-  display:flex;align-items:center;
-  background:var(--surf2);
-}
-
-/* KPI GRID */
-.kpi-grid{
-  display:grid;grid-template-columns:repeat(4,1fr);
-  background:var(--border);gap:1px;
-  border:1px solid var(--border);border-radius:var(--r);
-  overflow:hidden;margin-bottom:16px;
-}
-.kpi{background:var(--surface);padding:14px 16px}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);background:var(--border);gap:1px;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:16px;}
+.kpi{background:var(--surface);padding:15px 17px}
 .kpi-lbl{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;font-family:'DM Mono',monospace}
 .kpi-val{font-size:22px;font-weight:500;letter-spacing:-.03em;line-height:1;color:var(--text)}
-.kpi-val.g{color:var(--teal)}
-.kpi-val.w{color:var(--amber)}
-.kpi-val.d{color:var(--red)}
+.kpi-val.g{color:var(--teal)}.kpi-val.w{color:var(--amber)}.kpi-val.d{color:var(--red)}
 .kpi-unit{font-size:10px;color:var(--faint);margin-top:4px;font-family:'DM Mono',monospace}
 
-/* FONTE BADGE */
-.fonte-badge{
-  display:inline-flex;align-items:center;gap:4px;
-  font-size:10px;padding:2px 8px;border-radius:99px;
-  font-weight:500;margin-top:4px;
-}
+.fonte-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 8px;border-radius:99px;font-weight:500;margin-top:4px;}
 .fonte-sace{background:var(--tealL);color:var(--teal)}
 .fonte-openmeteo{background:var(--amberL);color:var(--amber)}
 .fonte-fallback{background:var(--redL);color:var(--red)}
 .fonte-ana{background:var(--navyL);color:var(--navy)}
 
-/* CHART GRID */
 .chart-grid{display:grid;grid-template-columns:1fr 230px;gap:12px;margin-bottom:12px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:15px 17px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px}
 .card-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
 .card-ttl{font-size:12.5px;font-weight:500}
 .card-sub{font-size:11px;color:var(--muted);margin-top:2px}
 .chart-box{height:190px}
 
-/* NIVEL */
 .nivel{display:flex;flex-direction:column;gap:15px}
 .n-lbl{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;font-family:'DM Mono',monospace}
 .n-val{font-size:17px;font-weight:500;letter-spacing:-.02em}
@@ -317,21 +168,22 @@ body{
 .n-status{font-size:12px;font-weight:500;margin-top:3px}
 .pico{display:flex;flex-direction:column;gap:11px}
 
-/* TABELA */
+.update-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px}
+.update-card-rows{display:flex;flex-direction:column;gap:10px}
+.uc-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.uc-lbl{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:'DM Mono',monospace;white-space:nowrap}
+.uc-val{font-size:11.5px;font-weight:500;text-align:right}
+.uc-horarios{font-family:'DM Mono',monospace;font-size:10.5px;color:var(--muted);text-align:right}
+.uc-live{display:flex;align-items:center;gap:5px;}
+.uc-dot{width:5px;height:5px;border-radius:50%;background:var(--teal);animation:blink 2.5s ease infinite;flex-shrink:0}
+
 .est-tbl{width:100%;border-collapse:collapse}
-.est-tbl th{
-  font-size:9px;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--muted);padding:9px 10px;text-align:left;
-  border-bottom:2px solid var(--bordm);
-  font-family:'DM Mono',monospace;font-weight:400;
-  background:var(--surf2);
-}
+.est-tbl th{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:9px 10px;text-align:left;border-bottom:2px solid var(--bordm);font-family:'DM Mono',monospace;font-weight:400;background:var(--surf2);}
 .est-tbl td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:middle}
 .est-tbl tr:last-child td{border-bottom:none}
 .est-tbl tbody tr:hover td{background:var(--surf2);cursor:pointer}
 .tbl-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:7px;vertical-align:middle}
 
-/* MAPA */
 .mapa-shell{display:flex;flex-direction:column;height:100%}
 .mapa-body{flex:1;position:relative;overflow:hidden}
 .map-controls{position:absolute;top:14px;right:14px;z-index:1000;display:flex;flex-direction:column;gap:8px;}
@@ -356,7 +208,6 @@ body{
 .leaflet-tooltip.city-lbl{background:rgba(255,255,255,.92)!important;border:none!important;box-shadow:none!important;color:#1A1714;font-size:10px;font-weight:500;padding:2px 6px;border-radius:4px;font-family:'Outfit',sans-serif;}
 .leaflet-tooltip.city-lbl::before{display:none!important}
 
-/* ALERTAS */
 .al-cards{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
 .al-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:background .15s;}
 .al-card:hover{background:var(--surf2)}
@@ -364,10 +215,157 @@ body{
 .al-card-name{font-size:12.5px;font-weight:500}
 .al-card-desc{font-size:11px;color:var(--muted);margin-top:1px}
 .al-card-cota{font-family:'DM Mono',monospace;font-size:13px;text-align:right;flex-shrink:0}
-.sec-ttl{font-size:15px;font-weight:500;letter-spacing:-.02em;margin-bottom:4px}
+.sec-ttl{font-size:16px;font-weight:500;letter-spacing:-.02em;margin-bottom:4px}
 .sec-sub{font-size:12px;color:var(--muted);margin-bottom:18px}
 
-/* DASHBOARD */
+.ticker-wrap{
+  background:var(--sid);
+  border-bottom:1px solid rgba(255,255,255,.06);
+  position:relative;
+  overflow:hidden;
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+}
+.ticker-gradient-left{
+  position:absolute;left:0;top:0;bottom:0;width:80px;z-index:2;pointer-events:none;
+  background:linear-gradient(90deg,var(--sid) 40%,transparent);
+}
+.ticker-gradient-right{
+  position:absolute;right:0;top:0;bottom:0;width:80px;z-index:2;pointer-events:none;
+  background:linear-gradient(270deg,var(--sid) 40%,transparent);
+}
+.ticker-pill{
+  position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  z-index:3;
+  display:flex;align-items:center;gap:5px;
+  background:rgba(61,184,154,.12);
+  border:1px solid rgba(61,184,154,.2);
+  border-radius:99px;
+  padding:3px 8px 3px 6px;
+}
+.ticker-live-dot{width:5px;height:5px;border-radius:50%;background:#3DB89A;animation:blink 2s ease infinite;flex-shrink:0}
+.ticker-live-lbl{font-size:8px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(61,184,154,.8);font-family:'DM Mono',monospace;}
+.ticker-scroll{
+  display:flex;
+  width:100%;
+  overflow:hidden;
+  padding:8px 0;
+  padding-left:80px;
+}
+.ticker-track{display:flex;gap:0;animation:tickerScroll 55s linear infinite;width:max-content;}
+.ticker-wrap:hover .ticker-track{animation-play-state:paused}
+@keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.ticker-item{display:flex;align-items:center;gap:8px;padding:0 22px;cursor:pointer;transition:opacity .15s;white-space:nowrap;border-right:1px solid rgba(255,255,255,.06);}
+.ticker-item:hover{opacity:.7}
+.ticker-name{font-size:11px;font-weight:500;font-family:'DM Mono',monospace;letter-spacing:.02em}
+.ticker-cota{font-size:11px;font-weight:500;font-family:'DM Mono',monospace}
+.ticker-var{font-size:9.5px;font-family:'DM Mono',monospace}
+.ticker-badge{font-size:8.5px;font-weight:600;padding:1px 5px;border-radius:99px;text-transform:uppercase;letter-spacing:.05em;}
+.ticker-sep{width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,.12);flex-shrink:0;}
+
+/* ══ HOME ══ */
+.home-page{flex:1;overflow-y:auto;background:var(--bg);scrollbar-width:thin;scrollbar-color:var(--faint) transparent;}
+.home-page::-webkit-scrollbar{width:5px}
+.home-page::-webkit-scrollbar-thumb{background:var(--faint);border-radius:99px}
+
+.home-hero{
+  position:relative;
+  background:var(--sid);
+  padding:64px 56px 56px;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+}
+.home-hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 55% 70% at 85% 50%, rgba(27,124,108,.05) 0%, transparent 65%);
+  pointer-events:none;
+}
+.home-hero::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(196,122,30,.15),transparent);
+}
+.home-eyebrow{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-bottom:18px;position:relative;z-index:1;}
+.home-title{font-family:'Lora',Georgia,serif;font-size:40px;line-height:1.12;letter-spacing:-.02em;color:#EDE9E1;font-weight:600;margin-bottom:14px;max-width:560px;position:relative;z-index:1;}
+.home-title .ht-acc{color:#C47A1E;font-style:italic;font-weight:500}
+.home-title .ht-teal{color:#3DB89A}
+.home-cta-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:44px;position:relative;z-index:1;}
+.home-cta-primary{padding:11px 22px;border-radius:99px;background:var(--teal);color:#fff;border:none;font-family:'Outfit',inherit;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:7px;}
+.home-cta-primary:hover{filter:brightness(1.12);transform:translateY(-1px)}
+.home-cta-secondary{padding:11px 22px;border-radius:99px;background:transparent;color:rgba(237,233,225,.45);border:1px solid rgba(255,255,255,.1);font-family:'Outfit',inherit;font-size:12px;cursor:pointer;transition:all .2s;}
+.home-cta-secondary:hover{border-color:rgba(255,255,255,.2);color:#EDE9E1}
+.home-stats{
+  display:flex;align-items:center;gap:0;
+  border-top:1px solid rgba(255,255,255,.06);
+  padding-top:26px;
+  position:relative;z-index:1;
+  width:100%;
+}
+.home-stat{padding:0 30px 0 0;border-right:1px solid rgba(255,255,255,.06);margin-right:30px;}
+.home-stat:last-child{border-right:none}
+.home-stat-val{font-family:'DM Mono',monospace;font-size:21px;font-weight:400;color:#EDE9E1;letter-spacing:-.01em;line-height:1;margin-bottom:5px;}
+.home-stat-lbl{font-size:9px;color:rgba(255,255,255,.22);font-family:'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase}
+
+.home-features{padding:26px 36px;display:grid;grid-template-columns:repeat(3,1fr);gap:11px;}
+.home-feat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.home-feat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--feat-color,var(--teal));opacity:0;transition:opacity .2s;}
+.home-feat:hover{transform:translateY(-2px);border-color:var(--bordm);}
+.home-feat:hover::before{opacity:1}
+.home-feat-ico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;background:var(--feat-bg,var(--tealL));}
+.home-feat-ico svg{width:15px;height:15px;fill:none;stroke:var(--feat-color,var(--teal));stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.home-feat-ttl{font-size:12.5px;font-weight:500;margin-bottom:5px}
+.home-feat-dsc{font-size:11px;color:var(--muted);line-height:1.65}
+.home-feat-link{font-size:11px;color:var(--feat-color,var(--teal));margin-top:10px;display:flex;align-items:center;gap:4px;font-weight:500;}
+
+.home-about{margin:0 36px 32px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px 28px;display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:center;}
+.home-about-ttl{font-family:'Lora',Georgia,serif;font-size:20px;letter-spacing:-.01em;margin-bottom:10px;font-weight:600;}
+.home-about-txt{font-size:12px;color:var(--muted);line-height:1.8}
+.home-about-right{display:flex;flex-direction:column;gap:7px}
+.home-about-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surf2);border:1px solid var(--border);border-radius:8px;font-size:11.5px;}
+.hai-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.home-footer{padding:14px 36px 26px;text-align:center;border-top:1px solid var(--border);}
+
+.filtros-rede{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+.filtro-chip{padding:5px 13px;border-radius:99px;border:1px solid var(--bordm);background:transparent;font-family:inherit;font-size:11.5px;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap;}
+.filtro-chip:hover{color:var(--text);border-color:var(--text)}
+.filtro-chip.ativo{background:var(--navy);color:#fff;border-color:var(--navy)}
+.regiao-label{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-family:'DM Mono',monospace;padding:12px 0 5px;margin-bottom:4px;border-bottom:1px solid var(--bordm);margin-top:8px;}
+.regiao-label:first-child{padding-top:0;margin-top:0}
+.est-card-grid{display:flex;flex-direction:column;gap:2px;}
+.est-row-card{display:grid;grid-template-columns:1fr 90px 90px 90px 80px 70px 72px;align-items:center;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:7px;gap:8px;cursor:pointer;transition:background .12s;}
+.est-row-card:hover{background:var(--surf2)}
+.est-row-hdr{display:grid;grid-template-columns:1fr 90px 90px 90px 80px 70px 72px;padding:9px 12px;gap:8px;background:var(--surf2);border:1px solid var(--bordm);border-radius:7px;margin-bottom:4px;}
+.est-row-hdr span{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:'DM Mono',monospace;font-weight:400;}
+.est-num{font-family:'DM Mono',monospace;font-size:12px;text-align:right;}
+.est-status-badge{font-size:10px;font-weight:500;padding:2px 8px;border-radius:99px;text-align:center;}
+
+.log-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.log-filters{display:flex;gap:8px;flex-wrap:wrap}
+.log-entry{display:flex;gap:14px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:6px;transition:background .12s;}
+.log-entry:hover{background:var(--surf2)}
+.log-entry.log-cache{border-left:3px solid var(--red);background:rgba(192,57,43,.03);}
+.log-dot-wrap{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+.log-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.log-dot.sace{background:var(--teal)}.log-dot.openmeteo{background:var(--amber)}.log-dot.fallback,.log-dot.erro{background:var(--red)}
+.log-content{flex:1;min-width:0}
+.log-top{display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap;}
+.log-estacao{font-size:12.5px;font-weight:500}
+.log-ts{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace}
+.log-detail{font-size:11.5px;color:var(--muted);line-height:1.55}
+.log-detail.log-detail-erro{color:var(--red)}
+.log-cota{font-family:'DM Mono',monospace;font-size:13px;flex-shrink:0;text-align:right;padding-top:2px}
+.log-turno{font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:99px;flex-shrink:0;}
+.turno-manha{background:var(--amberL);color:var(--amber)}
+.turno-tarde{background:var(--tealL);color:var(--teal)}
+.turno-noite{background:var(--navyL);color:var(--navy)}
+.log-summary-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+.log-sum-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;}
+.log-sum-val{font-size:20px;font-weight:500;letter-spacing:-.02em}
+.log-sum-lbl{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:'DM Mono',monospace;margin-top:4px;}
+.log-sum-card.log-sum-alert{border-color:rgba(192,57,43,.3);background:rgba(192,57,43,.04)}
+
 .analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
 .analytics-wide{grid-column:1/-1}
 .dash-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
@@ -376,294 +374,18 @@ body{
 .dash-kpi-val{font-size:20px;font-weight:500;letter-spacing:-.03em}
 .dash-kpi-sub{font-size:10px;color:var(--muted);margin-top:3px}
 
-/* ══ TICKER ══ */
-.ticker-outer{
-  overflow:hidden;
-  background:rgba(0,0,0,.18);
-  border-top:1px solid rgba(255,255,255,.07);
-  border-bottom:1px solid rgba(255,255,255,.05);
-  padding:10px 0;
-  position:relative;
-  width:100%;
-}
-.ticker-outer::before,.ticker-outer::after{
-  content:'';position:absolute;top:0;bottom:0;width:60px;z-index:2;pointer-events:none;
-}
-.ticker-outer::before{left:0;background:linear-gradient(90deg,rgba(42,34,24,1),transparent)}
-.ticker-outer::after{right:0;background:linear-gradient(270deg,rgba(42,34,24,1),transparent)}
-.ticker-track{
-  display:flex;gap:0;
-  animation:tickerScroll 40s linear infinite;
-  width:max-content;
-}
-.ticker-outer:hover .ticker-track{animation-play-state:paused}
-@keyframes tickerScroll{
-  0%{transform:translateX(0)}
-  100%{transform:translateX(-50%)}
-}
-.ticker-item{
-  display:flex;align-items:center;gap:10px;
-  padding:0 28px;
-  cursor:pointer;
-  transition:opacity .15s;
-  white-space:nowrap;
-  border-right:1px solid rgba(255,255,255,.06);
-}
-.ticker-item:hover{opacity:.7}
-.ticker-name{font-size:11px;font-weight:500;color:rgba(237,233,225,.8);font-family:'DM Mono',monospace;letter-spacing:.04em}
-.ticker-cota{font-size:12px;font-weight:500;font-family:'DM Mono',monospace}
-.ticker-var{font-size:10px;font-family:'DM Mono',monospace}
-.ticker-badge{
-  font-size:9px;font-weight:600;padding:1px 6px;border-radius:99px;
-  text-transform:uppercase;letter-spacing:.06em;
-}
-.ticker-sep{
-  width:4px;height:4px;border-radius:50%;
-  background:rgba(255,255,255,.15);flex-shrink:0;
-}
-
-/* ══ HOME ══ */
-.home-page{
-  flex:1;overflow-y:auto;background:var(--bg);
-  scrollbar-width:thin;scrollbar-color:var(--faint) transparent;
-}
-.home-page::-webkit-scrollbar{width:5px}
-.home-page::-webkit-scrollbar-track{background:transparent}
-.home-page::-webkit-scrollbar-thumb{background:var(--faint);border-radius:99px}
-.home-page::-webkit-scrollbar-thumb:hover{background:var(--muted)}
-
-.home-hero{
-  position:relative;
-  background:#2A2218;
-  padding:0;
-  overflow:hidden;
-  min-height:420px;
-  display:flex;align-items:stretch;
-  flex-direction:column;
-}
-.home-hero::after{
-  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(196,122,30,.3),transparent);
-}
-/* conteúdo principal do hero — layout lateral */
-.home-hero-content{
-  display:flex;align-items:stretch;flex:1;
-}
-.home-hero-left{
-  flex:1;min-width:0;
-  display:flex;flex-direction:column;
-  justify-content:center;
-  padding:52px 48px 52px 48px;
-  position:relative;z-index:1;
-  animation:homeReveal .8s cubic-bezier(.16,1,.3,1) both;
-}
-/* ══ HERO RIGHT — painel de estações em vez da logo ══ */
-.home-hero-right{
-  width:320px;flex-shrink:0;
-  display:flex;flex-direction:column;
-  justify-content:center;
-  padding:32px 32px 32px 0;
-  position:relative;z-index:1;
-  animation:homeRevealRight 1s cubic-bezier(.16,1,.3,1) .15s both;
-  gap:8px;
-}
-@keyframes homeReveal{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
-@keyframes homeRevealRight{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
-.home-hero::before{
-  content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse 70% 80% at 75% 50%, rgba(27,124,108,.08) 0%, transparent 65%);
-  pointer-events:none;
-}
-.home-hero-divider{
-  width:1px;background:rgba(255,255,255,.07);
-  margin:40px 0;align-self:stretch;flex-shrink:0;
-}
-
-/* mini cards no hero right */
-.hero-station-card{
-  background:rgba(255,255,255,.04);
-  border:1px solid rgba(255,255,255,.07);
-  border-radius:8px;
-  padding:9px 12px;
-  display:flex;align-items:center;gap:10px;
-  cursor:pointer;
-  transition:background .15s;
-}
-.hero-station-card:hover{background:rgba(255,255,255,.08)}
-.hero-sc-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.hero-sc-name{font-size:11px;font-weight:500;color:rgba(237,233,225,.75);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hero-sc-cota{font-family:'DM Mono',monospace;font-size:12px;font-weight:500}
-.hero-sc-var{font-family:'DM Mono',monospace;font-size:10px}
-
-.home-eyebrow{
-  font-size:9px;letter-spacing:.2em;text-transform:uppercase;
-  color:rgba(255,255,255,.3);font-family:'DM Mono',monospace;
-  margin-bottom:16px;
-}
-.home-title{
-  font-family:'Lora',Georgia,serif;
-  font-size:38px;line-height:1.15;
-  letter-spacing:-.01em;
-  color:#EDE9E1;font-weight:600;
-  margin-bottom:14px;
-}
-.home-title .ht-acc{color:#C47A1E;font-style:italic;font-weight:500}
-.home-title .ht-teal{color:#3DB89A}
-.home-desc{
-  font-size:13px;line-height:1.75;
-  color:rgba(237,233,225,.5);
-  max-width:420px;
-  margin-bottom:24px;
-}
-.home-cta-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:36px}
-.home-cta-primary{
-  padding:10px 20px;border-radius:99px;
-  background:var(--teal);color:#fff;border:none;
-  font-family:'Outfit',inherit;font-size:12px;font-weight:500;
-  cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:7px;
-}
-.home-cta-primary:hover{background:#22937F;transform:translateY(-1px)}
-.home-cta-secondary{
-  padding:10px 20px;border-radius:99px;
-  background:transparent;color:rgba(237,233,225,.55);
-  border:1px solid rgba(255,255,255,.12);
-  font-family:'Outfit',inherit;font-size:12px;cursor:pointer;transition:all .2s;
-}
-.home-cta-secondary:hover{border-color:rgba(255,255,255,.25);color:#EDE9E1}
-.home-stats{
-  display:grid;grid-template-columns:repeat(4,1fr);
-  border-top:1px solid rgba(255,255,255,.07);
-  padding-top:20px;gap:8px;
-}
-.home-stat-val{
-  font-family:'DM Mono',monospace;
-  font-size:20px;font-weight:400;color:#EDE9E1;
-  letter-spacing:-.01em;line-height:1;margin-bottom:4px;
-}
-.home-stat-lbl{font-size:9px;color:rgba(255,255,255,.28);font-family:'DM Mono',monospace;letter-spacing:.06em;text-transform:uppercase}
-
-.home-features{padding:28px 40px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
-.home-feat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
-.home-feat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--feat-color, var(--teal));opacity:0;transition:opacity .2s;}
-.home-feat:hover{transform:translateY(-2px);border-color:var(--bordm);}
-.home-feat:hover::before{opacity:1}
-.home-feat-ico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;background:var(--feat-bg, var(--tealL));}
-.home-feat-ico svg{width:15px;height:15px;fill:none;stroke:var(--feat-color, var(--teal));stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
-.home-feat-ttl{font-size:12.5px;font-weight:500;margin-bottom:5px}
-.home-feat-dsc{font-size:11px;color:var(--muted);line-height:1.65}
-.home-feat-link{font-size:11px;color:var(--feat-color, var(--teal));margin-top:10px;display:flex;align-items:center;gap:4px;font-weight:500;}
-.home-about{margin:0 40px 36px;background:var(--surf2);border:1px solid var(--bordm);border-radius:12px;padding:24px 28px;display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:center;}
-.home-about-ttl{font-family:'Lora',Georgia,serif;font-size:22px;letter-spacing:-.01em;margin-bottom:10px;font-weight:600;}
-.home-about-txt{font-size:12px;color:var(--muted);line-height:1.8}
-.home-about-right{display:flex;flex-direction:column;gap:8px}
-.home-about-item{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:11.5px;}
-.hai-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.home-footer{padding:16px 40px 28px;text-align:center;border-top:1px solid var(--border);}
-
-/* REDE */
-.filtros-rede{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
-.filtro-chip{
-  padding:5px 13px;border-radius:99px;
-  border:1px solid var(--bordm);background:transparent;
-  font-family:inherit;font-size:11.5px;color:var(--muted);
-  cursor:pointer;transition:all .15s;white-space:nowrap;
-}
-.filtro-chip:hover{color:var(--text);border-color:var(--text)}
-.filtro-chip.ativo{background:var(--navy);color:#fff;border-color:var(--navy)}
-.regiao-label{
-  font-size:9px;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--muted);font-family:'DM Mono',monospace;
-  padding:12px 0 5px;margin-bottom:4px;border-bottom:1px solid var(--bordm);
-  margin-top:8px;
-}
-.regiao-label:first-child{padding-top:0;margin-top:0}
-.est-card-grid{display:flex;flex-direction:column;gap:2px;}
-.est-row-card{
-  display:grid;grid-template-columns:1fr 90px 90px 90px 80px 70px 72px;
-  align-items:center;padding:10px 12px;
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:6px;gap:8px;cursor:pointer;transition:background .12s;
-}
-.est-row-card:hover{background:var(--surf2)}
-.est-row-hdr{
-  display:grid;grid-template-columns:1fr 90px 90px 90px 80px 70px 72px;
-  padding:9px 12px;gap:8px;
-  background:var(--surf2);
-  border:1px solid var(--bordm);
-  border-radius:6px;
-  margin-bottom:4px;
-}
-.est-row-hdr span{
-  font-size:9px;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--muted);font-family:'DM Mono',monospace;font-weight:400;
-}
-.est-num{font-family:'DM Mono',monospace;font-size:12px;text-align:right;}
-.est-status-badge{
-  font-size:10px;font-weight:500;padding:2px 8px;border-radius:99px;text-align:center;
-}
-
-/* LOG */
-.log-page{}
-.log-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
-.log-filters{display:flex;gap:8px;flex-wrap:wrap}
-.log-entry{
-  display:flex;gap:14px;padding:12px 16px;
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--r);margin-bottom:6px;
-  transition:background .12s;
-}
-.log-entry:hover{background:var(--surf2)}
-.log-entry.log-cache{
-  border-left:3px solid var(--red);
-  background:rgba(192,57,43,.03);
-}
-.log-entry.log-cache:hover{background:rgba(192,57,43,.06)}
-.log-dot-wrap{display:flex;flex-direction:column;align-items:center;gap:0;flex-shrink:0;}
-.log-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px;}
-.log-dot.sace{background:var(--teal)}
-.log-dot.openmeteo{background:var(--amber)}
-.log-dot.fallback{background:var(--red)}
-.log-dot.erro{background:var(--red)}
-.log-content{flex:1;min-width:0}
-.log-top{display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap;}
-.log-estacao{font-size:12.5px;font-weight:500}
-.log-ts{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace}
-.log-detail{font-size:11.5px;color:var(--muted);line-height:1.55}
-.log-detail.log-detail-erro{color:var(--red)}
-.log-cota{font-family:'DM Mono',monospace;font-size:13px;flex-shrink:0;text-align:right;padding-top:2px}
-.log-turno{
-  font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
-  padding:2px 7px;border-radius:99px;flex-shrink:0;
-}
-.turno-manha{background:var(--amberL);color:var(--amber)}
-.turno-tarde{background:var(--tealL);color:var(--teal)}
-.turno-noite{background:var(--navyL);color:var(--navy)}
-.log-summary-row{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
-  margin-bottom:16px;
-}
-.log-sum-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;}
-.log-sum-val{font-size:20px;font-weight:500;letter-spacing:-.02em;color:var(--text)}
-.log-sum-lbl{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:'DM Mono',monospace;margin-top:4px;}
-.log-sum-card.log-sum-alert{border-color:rgba(192,57,43,.3);background:rgba(192,57,43,.04)}
-
-/* ESTADO */
 .state{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:12px;color:var(--muted);text-align:center}
 .spinner{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--teal);animation:spin .6s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-
 .footer{border-top:1px solid var(--border);padding:11px 22px;text-align:center;font-size:10px;color:var(--faint);font-family:'DM Mono',monospace;flex-shrink:0}
 
 @media(max-width:900px){
-  .home-hero-content{flex-direction:column}
-  .home-hero-right{width:100%;padding:0 24px 28px;flex-direction:row;flex-wrap:wrap}
-  .hero-station-card{flex:1;min-width:140px}
-  .home-hero-divider{display:none}
-  .home-hero-left{padding:40px 24px 24px}
-  .home-title{font-size:30px}
-  .home-stats{grid-template-columns:1fr 1fr;gap:16px}
-  .home-features{grid-template-columns:1fr 1fr;padding:24px 20px}
-  .home-about{grid-template-columns:1fr;margin:0 20px 28px}
+  .home-hero{padding:48px 24px 40px}
+  .home-title{font-size:32px}
+  .home-stats{flex-wrap:wrap;gap:20px}
+  .home-stat{border-right:none;margin-right:0;padding-right:0}
+  .home-features{grid-template-columns:1fr 1fr;padding:20px 16px}
+  .home-about{grid-template-columns:1fr;margin:0 16px 24px}
   .kpi-grid{grid-template-columns:repeat(2,1fr)}
   .chart-grid{grid-template-columns:1fr}
   .analytics-grid{grid-template-columns:1fr}
@@ -673,83 +395,15 @@ body{
 }
 @media(max-width:600px){
   .home-features{grid-template-columns:1fr}
-  .scroll{padding:12px 14px 48px}
-  .topbar{padding:8px 14px}
+  .scroll{padding:14px 16px 48px}
 }
 `;
 
-/* ─── COMPONENTES LOGO ────────────────────────────────────────────────────── */
-const BanzeiroWave = ({ width = 200, dark = true, className = '' }) => {
-  const h = Math.round(width * 100 / 280);
-  const amber = '#C4813A';
-  const teal = '#1B7C6C';
-  const tealLight = '#3DB89A';
-  const loop = dark ? '#2a1c10' : '#8A7060';
-  return (
-    <svg width={width} height={h} viewBox="0 0 280 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-      <path fill="none" stroke={loop} strokeWidth="5" strokeLinecap="round" d="M18,68 C10,52 8,36 18,26 C28,16 42,22 44,36 C46,50 34,60 28,52 C22,44 30,34 38,40"/>
-      <path fill="none" stroke={amber} strokeWidth="3.5" strokeLinecap="round" d="M44,50 C60,36 72,64 88,50 C104,36 116,64 132,50 C148,36 160,64 176,50 C192,36 204,64 220,52 C236,40 248,60 260,52"/>
-      <path fill="none" stroke={teal} strokeWidth="3" strokeLinecap="round" d="M44,58 C62,46 74,70 92,58 C110,46 122,70 140,58 C158,46 170,70 188,58 C206,46 218,66 236,58 C250,52 258,64 268,60"/>
-      <path fill="none" stroke={amber} strokeWidth="2.5" strokeLinecap="round" opacity="0.45" d="M44,42 C58,30 68,54 84,42 C100,30 112,54 128,42 C144,30 156,54 172,44 C188,34 200,56 216,46 C228,38 244,50 258,44"/>
-      <path fill="none" stroke={teal} strokeWidth="2" strokeLinecap="round" opacity="0.3" d="M50,66 C68,56 80,76 98,66 C116,56 128,76 146,66 C164,56 176,74 194,66 C210,58 224,70 240,64"/>
-      <circle fill="none" stroke={tealLight} strokeWidth="3" cx="152" cy="50" r="7"/>
-      <circle fill={amber} cx="152" cy="50" r="3.5"/>
-    </svg>
-  );
-};
-
-const LogoIcon = ({ size = 36 }) => (
-  <svg width={size} height={size} viewBox="0 0 280 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path fill="none" stroke="#2a1c10" strokeWidth="8" strokeLinecap="round" d="M18,68 C10,52 8,36 18,26 C28,16 42,22 44,36 C46,50 34,60 28,52 C22,44 30,34 38,40"/>
-    <path fill="none" stroke="#C4813A" strokeWidth="7" strokeLinecap="round" d="M44,50 C60,36 72,64 88,50 C104,36 116,64 132,50 C148,36 160,64 176,50 C192,36 204,64 220,52"/>
-    <path fill="none" stroke="#1B7C6C" strokeWidth="6" strokeLinecap="round" d="M44,58 C62,46 74,70 92,58 C110,46 122,70 140,58 C158,46 170,70 188,58"/>
-    <circle fill="none" stroke="#3DB89A" strokeWidth="5" cx="152" cy="50" r="8"/>
-    <circle fill="#C4813A" cx="152" cy="50" r="4"/>
-  </svg>
-);
-
-/* ── Splash ───────────────────────────────────────────────────────────────── */
-const SplashScreen = ({ onDone }) => {
-  useEffect(() => {
-    const t = setTimeout(onDone, 2900);
-    return () => clearTimeout(t);
-  }, []);
-  return (
-    <div className="splash">
-      <div className="splash-inner">
-        <svg width="300" height="107" viewBox="0 0 280 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ filter:'drop-shadow(0 0 28px rgba(196,122,30,0.18))' }}>
-          <path className="bzr-loop" fill="none" stroke="#2a1c10" strokeWidth="5" strokeLinecap="round" d="M18,68 C10,52 8,36 18,26 C28,16 42,22 44,36 C46,50 34,60 28,52 C22,44 30,34 38,40"/>
-          <path className="bzr-w1" fill="none" stroke="#C4813A" strokeWidth="3.5" strokeLinecap="round" d="M44,50 C60,36 72,64 88,50 C104,36 116,64 132,50 C148,36 160,64 176,50 C192,36 204,64 220,52 C236,40 248,60 260,52"/>
-          <path className="bzr-w2" fill="none" stroke="#533d0e" strokeWidth="3" strokeLinecap="round" d="M44,58 C62,46 74,70 92,58 C110,46 122,70 140,58 C158,46 170,70 188,58 C206,46 218,66 236,58 C250,52 258,64 268,60"/>
-          <path className="bzr-w3" fill="none" stroke="#C4813A" strokeWidth="2.5" strokeLinecap="round" opacity="0.45" d="M44,42 C58,30 68,54 84,42 C100,30 112,54 128,42 C144,30 156,54 172,44 C188,34 200,56 216,46 C228,38 244,50 258,44"/>
-          <path className="bzr-w4" fill="none" stroke="#C4813A" strokeWidth="2" strokeLinecap="round" opacity="0.28" d="M50,66 C68,56 80,76 98,66 C116,56 128,76 146,66 C164,56 176,74 194,66 C210,58 224,70 240,64"/>
-          <path className="bzr-w5" fill="none" stroke="#C4813A" strokeWidth="1.5" strokeLinecap="round" opacity="0.18" d="M50,36 C64,26 76,46 92,36 C108,26 120,46 136,38 C152,30 164,46 180,38"/>
-          <circle className="bzr-dot" fill="none" stroke="#3DB89A" strokeWidth="3" cx="152" cy="50"/>
-          <circle className="bzr-dot-in" fill="#C4813A" cx="152" cy="50"/>
-        </svg>
-        <svg width="210" height="58" viewBox="0 0 230 58" fill="none" className="bzr-name" xmlns="http://www.w3.org/2000/svg">
-          <text y="48" fontFamily="'Lora', Georgia, 'Times New Roman', serif" fontSize="46">
-            <tspan fill="#EDE9E1" fontWeight="600">Fl</tspan>
-            <tspan fill="#EDE9E1" fontStyle="italic" fontWeight="500">u</tspan>
-            <tspan fill="#EDE9E1" fontWeight="600">vi</tspan>
-            <tspan fill="#C4813A" fontWeight="600">AM</tspan>
-          </text>
-        </svg>
-        <div className="splash-tagline">Monitor Hidrológico · Bacia Amazônica</div>
-        <div className="splash-bar"><div className="splash-bar-fill"/></div>
-      </div>
-    </div>
-  );
-};
-
-/* ─── Config ──────────────────────────────────────────────────────────────── */
-// ALERTAS_FIXOS REMOVIDO — alertas agora são dinâmicos via FloodAlert
-
 const REGIOES = {
-  "Alto Solimões":   ["Tabatinga", "Tefé", "Coari"],
-  "Médio Solimões":  ["Manacapuru", "Iranduba", "Careiro da Várzea"],
-  "Rio Negro":       ["Manaus", "Novo Airão", "Barcelos", "São Gabriel da Cachoeira"],
-  "Baixo Amazonas":  ["Itacoatiara", "Parintins", "Óbidos", "Santarém", "Maués", "Borba"],
+  "Alto Solimões":     ["Tabatinga", "Tefé", "Coari"],
+  "Médio Solimões":    ["Manacapuru", "Iranduba", "Careiro da Várzea"],
+  "Rio Negro":         ["Manaus", "Novo Airão", "Barcelos", "São Gabriel da Cachoeira"],
+  "Baixo Amazonas":    ["Itacoatiara", "Parintins", "Óbidos", "Santarém", "Maués", "Borba"],
   "Rio Purus/Madeira": ["Lábrea", "Humaitá", "Manicoré", "Beruri"],
 };
 
@@ -791,16 +445,16 @@ const PERIODOS = [
 ];
 
 const NAV = [
-  { id:'home',      label:'Início',           d:'M3 12L12 3l9 9 M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9' },
-  { id:'mapa',      label:'Mapa ao Vivo',      d:'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6z M9 3v15 M15 6v15' },
-  { id:'estacao',   label:'Estação',           d:'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10' },
-  { id:'alertas',   label:'Alertas',           d:'M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z M12 9v4 M12 17h.01', badge:true },
-  { id:'rede',      label:'Rede de Estações',  d:'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z M12 10a2 2 0 100-4 2 2 0 000 4' },
-  { id:'log',       label:'Log de Atualizações', d:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2 M9 5a2 2 0 002 2h2a2 2 0 002-2 M9 5a2 2 0 012-2h2a2 2 0 012 2 M9 12h6 M9 16h4' },
-  { id:'dashboard', label:'Dashboard',         d:'M18 20V10 M12 20V4 M6 20v-6' },
+  { id:'home',      label:'Início',              d:'M3 12L12 3l9 9 M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9' },
+  { id:'mapa',      label:'Mapa ao Vivo',         d:'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6z M9 3v15 M15 6v15' },
+  { id:'estacao',   label:'Estação',              d:'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10' },
+  { id:'alertas',   label:'Alertas',              d:'M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z M12 9v4 M12 17h.01', badge:true },
+  { id:'rede',      label:'Rede de Estações',     d:'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z M12 10a2 2 0 100-4 2 2 0 000 4' },
+  { id:'log',       label:'Log de Atualizações',  d:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2 M9 5a2 2 0 002 2h2a2 2 0 002-2 M9 5a2 2 0 012-2h2a2 2 0 012 2 M9 12h6 M9 16h4' },
+  { id:'dashboard', label:'Dashboard',            d:'M18 20V10 M12 20V4 M6 20v-6' },
 ];
 
-const COR = { g:'#1B7C6C', w:'#C47A1E', d:'#C0392B' };
+const COR = { g:'#1A6B5C', w:'#B8722A', d:'#C0392B' };
 const fmtD = s => { if (!s) return ''; const [,m,d] = s.split('-'); return `${d}/${m}`; };
 
 function classificar(cota, cfg) {
@@ -822,22 +476,15 @@ function estimarPico(lista) {
   const dias = Math.min(30, Math.round(14 + Math.abs(cotaAtual / (tend||0.001))));
   const cotaPico = Math.min(cotaAtual + tend * dias, 38);
   const dt = new Date(); dt.setDate(dt.getDate() + dias);
-  return {
-    data: dt.toLocaleDateString('pt-BR', { day:'2-digit', month:'short' }),
-    cota: cotaPico.toFixed(2),
-    desc: `${tend > 0 ? '+' : ''}${tend.toFixed(3)} m/dia`
-  };
+  return { data: dt.toLocaleDateString('pt-BR', { day:'2-digit', month:'short' }), cota: cotaPico.toFixed(2), desc: `${tend > 0 ? '+' : ''}${tend.toFixed(3)} m/dia` };
 }
 
 function getUpdateTimes(fonte) {
-  const now = new Date();
-  const h = now.getHours();
+  const h = new Date().getHours();
   const turno = h >= 6 && h < 12 ? 'manha' : h >= 12 && h < 18 ? 'tarde' : 'noite';
   const turnoLabel = { manha:'Manhã', tarde:'Tarde', noite:'Noite' }[turno];
-  if (fonte === 'sace') {
-    return { turno, turnoLabel, horarios: ['06:00', '12:00', '18:00', '00:00'], proxima: turno === 'manha' ? '12:00' : turno === 'tarde' ? '18:00' : '00:00' };
-  }
-  return { turno, turnoLabel, horarios: ['07:00', '19:00'], proxima: h < 19 ? '19:00' : '07:00' };
+  if (fonte === 'sace') return { turno, turnoLabel, horarios: ['06:00','12:00','18:00','00:00'], proxima: turno==='manha'?'12:00':turno==='tarde'?'18:00':'00:00' };
+  return { turno, turnoLabel, horarios: ['07:00','19:00'], proxima: h < 19 ? '19:00' : '07:00' };
 }
 
 function gerarLog(dados, estacoes) {
@@ -846,20 +493,18 @@ function gerarLog(dados, estacoes) {
     const info = dados[nome] || {};
     const lista = info.dados || [];
     const fonte = info.fonte || 'fallback';
-    if (lista.length === 0) return;
-    const ult = lista[lista.length - 1];
+    if (!lista.length) return;
+    const ult = lista[lista.length-1];
     const data = new Date(ult.data + 'T12:00:00');
     const h = data.getHours() + (Math.random() > 0.5 ? 6 : 0);
     const turno = h >= 6 && h < 12 ? 'manha' : h >= 12 && h < 18 ? 'tarde' : 'noite';
     log.push({ id:`${nome}-${ult.data}`, estacao:nome, data:ult.data, ts:data.toISOString(), cota:ult.cota_m, fonte, turno, registros:lista.length, status:fonte==='sace'?'ok':fonte==='open-meteo'?'estimativa':'fallback', rio:CFG[nome]?.rio||'—' });
     if (lista.length > 1) {
-      const ant = lista[lista.length - 2];
-      const dataAnt = new Date(ant.data + 'T06:00:00');
-      log.push({ id:`${nome}-${ant.data}`, estacao:nome, data:ant.data, ts:dataAnt.toISOString(), cota:ant.cota_m, fonte, turno:'manha', registros:lista.length-1, status:fonte==='sace'?'ok':'estimativa', rio:CFG[nome]?.rio||'—' });
+      const ant = lista[lista.length-2];
+      log.push({ id:`${nome}-${ant.data}`, estacao:nome, data:ant.data, ts:new Date(ant.data+'T06:00:00').toISOString(), cota:ant.cota_m, fonte, turno:'manha', registros:lista.length-1, status:fonte==='sace'?'ok':'estimativa', rio:CFG[nome]?.rio||'—' });
     }
   });
-  log.sort((a, b) => new Date(b.ts) - new Date(a.ts));
-  return log;
+  return log.sort((a,b) => new Date(b.ts) - new Date(a.ts));
 }
 
 const Tip = ({ active, payload, label }) => {
@@ -872,119 +517,176 @@ const Tip = ({ active, payload, label }) => {
   );
 };
 
-/* ══ COMPONENTE: ALERTA DINÂMICO ══════════════════════════════════════════════
-   Renderiza apenas se cota ≥ 70% da cota de alerta.
-   Calcula tipo em tempo real: Atenção / Alerta / Emergência.
-   =========================================================================== */
+const LogoIcon = ({ size = 32 }) => (
+  <svg width={size} height={size} viewBox="0 0 280 100" fill="none">
+    <path fill="none" stroke="#2a1c10" strokeWidth="8" strokeLinecap="round" d="M18,68 C10,52 8,36 18,26 C28,16 42,22 44,36 C46,50 34,60 28,52 C22,44 30,34 38,40"/>
+    <path fill="none" stroke="#C4813A" strokeWidth="7" strokeLinecap="round" d="M44,50 C60,36 72,64 88,50 C104,36 116,64 132,50 C148,36 160,64 176,50 C192,36 204,64 220,52"/>
+    <path fill="none" stroke="#1B7C6C" strokeWidth="6" strokeLinecap="round" d="M44,58 C62,46 74,70 92,58 C110,46 122,70 140,58 C158,46 170,70 188,58"/>
+    <circle fill="none" stroke="#3DB89A" strokeWidth="5" cx="152" cy="50" r="8"/>
+    <circle fill="#C4813A" cx="152" cy="50" r="4"/>
+  </svg>
+);
+
+const SplashScreen = ({ onDone }) => {
+  useEffect(() => { const t = setTimeout(onDone, 2900); return () => clearTimeout(t); }, []);
+  return (
+    <div className="splash">
+      <div className="splash-inner">
+        <svg width="300" height="107" viewBox="0 0 280 100" fill="none" style={{ filter:'drop-shadow(0 0 28px rgba(196,122,30,0.18))' }}>
+          <path className="bzr-loop" fill="none" stroke="#2a1c10" strokeWidth="5" strokeLinecap="round" d="M18,68 C10,52 8,36 18,26 C28,16 42,22 44,36 C46,50 34,60 28,52 C22,44 30,34 38,40"/>
+          <path className="bzr-w1" fill="none" stroke="#C4813A" strokeWidth="3.5" strokeLinecap="round" d="M44,50 C60,36 72,64 88,50 C104,36 116,64 132,50 C148,36 160,64 176,50 C192,36 204,64 220,52 C236,40 248,60 260,52"/>
+          <path className="bzr-w2" fill="none" stroke="#533d0e" strokeWidth="3" strokeLinecap="round" d="M44,58 C62,46 74,70 92,58 C110,46 122,70 140,58 C158,46 170,70 188,58 C206,46 218,66 236,58 C250,52 258,64 268,60"/>
+          <path className="bzr-w3" fill="none" stroke="#C4813A" strokeWidth="2.5" strokeLinecap="round" opacity="0.45" d="M44,42 C58,30 68,54 84,42 C100,30 112,54 128,42 C144,30 156,54 172,44 C188,34 200,56 216,46 C228,38 244,50 258,44"/>
+          <path className="bzr-w4" fill="none" stroke="#C4813A" strokeWidth="2" strokeLinecap="round" opacity="0.28" d="M50,66 C68,56 80,76 98,66 C116,56 128,76 146,66 C164,56 176,74 194,66"/>
+          <path className="bzr-w5" fill="none" stroke="#C4813A" strokeWidth="1.5" strokeLinecap="round" opacity="0.18" d="M50,36 C64,26 76,46 92,36 C108,26 120,46 136,38"/>
+          <circle className="bzr-dot" fill="none" stroke="#3DB89A" strokeWidth="3" cx="152" cy="50"/>
+          <circle className="bzr-dot-in" fill="#C4813A" cx="152" cy="50"/>
+        </svg>
+        <svg width="210" height="58" viewBox="0 0 230 58" fill="none" className="bzr-name">
+          <text y="48" fontFamily="'Lora', Georgia, serif" fontSize="46">
+            <tspan fill="#EDE9E1" fontWeight="600">Fl</tspan>
+            <tspan fill="#EDE9E1" fontStyle="italic" fontWeight="500">u</tspan>
+            <tspan fill="#EDE9E1" fontWeight="600">vi</tspan>
+            <tspan fill="#C4813A" fontWeight="600">AM</tspan>
+          </text>
+        </svg>
+        <div className="splash-tagline">Monitor Hidrológico · Bacia Amazônica</div>
+        <div className="splash-bar"><div className="splash-bar-fill"/></div>
+      </div>
+    </div>
+  );
+};
+
 function FloodAlert({ estacao, cotaAtual, cotaAlerta, cotaEmergencia }) {
   if (!cotaAlerta || cotaAtual == null) return null;
-
-  const limiarAtencao    = cotaAlerta * 0.70;
-  const limiarAlerta     = cotaAlerta;
+  const limiarAtencao = cotaAlerta * 0.70;
   const limiarEmergencia = cotaEmergencia || cotaAlerta * 1.20;
-
   if (cotaAtual < limiarAtencao) return null;
-
   let tipo, titulo, descricao, cls;
-
   if (cotaAtual >= limiarEmergencia) {
-    tipo = 'emergencia';
-    cls  = '';   // vermelho (padrão)
-    titulo = `Emergência — ${estacao}`;
-    descricao = `Cota ${cotaAtual.toFixed(2)} m ultrapassa a cota de emergência (${limiarEmergencia.toFixed(2)} m). Risco muito elevado.`;
-  } else if (cotaAtual >= limiarAlerta) {
-    tipo = 'alerta';
-    cls  = '';
-    titulo = `Alerta de enchente — ${estacao}`;
-    descricao = `Cota ${cotaAtual.toFixed(2)} m acima da cota de alerta (${cotaAlerta.toFixed(2)} m). Monitoramento intensivo necessário.`;
+    tipo='emergencia'; cls=''; titulo=`Emergência — ${estacao}`; descricao=`Cota ${cotaAtual.toFixed(2)} m ultrapassa a cota de emergência (${limiarEmergencia.toFixed(2)} m). Risco muito elevado.`;
+  } else if (cotaAtual >= cotaAlerta) {
+    tipo='alerta'; cls=''; titulo=`Alerta de enchente — ${estacao}`; descricao=`Cota ${cotaAtual.toFixed(2)} m acima da cota de alerta (${cotaAlerta.toFixed(2)} m). Monitoramento intensivo.`;
   } else {
-    tipo = 'atencao';
-    cls  = 'atencao';
-    titulo = `Atenção — ${estacao}`;
-    descricao = `Cota ${cotaAtual.toFixed(2)} m se aproxima da cota de alerta (${cotaAlerta.toFixed(2)} m). Acompanhar evolução.`;
+    tipo='atencao'; cls='atencao'; titulo=`Atenção — ${estacao}`; descricao=`Cota ${cotaAtual.toFixed(2)} m se aproxima da cota de alerta (${cotaAlerta.toFixed(2)} m).`;
   }
-
   return (
     <div className={`al-bar ${cls}`}>
-      <div className="al-ico">{tipo === 'atencao' ? '⚠' : '🚨'}</div>
-      <div>
-        <div className="al-ttl">{titulo}</div>
-        <div className="al-dsc">{descricao}</div>
-      </div>
+      <div className="al-ico">{tipo==='atencao'?'⚠':'🚨'}</div>
+      <div><div className="al-ttl">{titulo}</div><div className="al-dsc">{descricao}</div></div>
     </div>
   );
 }
 
-/* ══ COMPONENTE: TICKER DE ESTAÇÕES ══════════════════════════════════════════
-   Faixa animada com info de todas as estações.
-   Para no hover. Duplica os itens para scroll infinito suave.
-   =========================================================================== */
-function StationTicker({ estacoes, dados, config, onClickEstacao }) {
+function StationTicker({ estacoes, dados, onClickEstacao }) {
   if (!estacoes.length) return null;
-
   const items = estacoes.map(nome => {
-    const d  = dados[nome] || {};
-    const l  = d.dados || [];
-    const u  = l[l.length - 1] || {};
+    const l = (dados[nome]?.dados || []);
+    const u = l[l.length-1] || {};
     const co = u.cota_m ?? 0;
-    const prev = l.length > 1 ? (l[l.length - 2]?.cota_m ?? co) : co;
+    const prev = l.length > 1 ? (l[l.length-2]?.cota_m ?? co) : co;
     const diff = +(co - prev).toFixed(2);
-    const { c, t } = classificar(co, config[nome]);
-    return { nome, cota: co, diff, cls: c, status: t };
+    const { c, t } = classificar(co, CFG[nome]);
+    return { nome, cota:co, diff, cls:c, status:t };
   });
-
-  // Duplicar para scroll contínuo
   const doubled = [...items, ...items];
 
-  const badgeStyle = (cls) => {
-    if (cls === 'd') return { background:'rgba(192,57,43,.35)', color:'#FF9B8F' };
-    if (cls === 'w') return { background:'rgba(196,122,30,.35)', color:'#F5C87A' };
+  const badgeStyle = cls => {
+    if (cls==='d') return { background:'rgba(192,57,43,.35)', color:'#FF9B8F' };
+    if (cls==='w') return { background:'rgba(196,122,30,.35)', color:'#F5C87A' };
     return null;
   };
 
   return (
-    <div className="ticker-outer">
-      <div className="ticker-track">
-        {doubled.map((item, i) => (
-          <div
-            key={`${item.nome}-${i}`}
-            className="ticker-item"
-            onClick={() => onClickEstacao(item.nome)}
-          >
-            <span
-              className="ticker-name"
-              style={{ color: item.cls !== 'g' ? (item.cls === 'd' ? '#FF9B8F' : '#F5C87A') : 'rgba(237,233,225,.7)' }}
-            >
-              {item.nome}
-            </span>
-            <span className="ticker-sep"/>
-            <span
-              className="ticker-cota"
-              style={{ color: COR[item.cls] }}
-            >
-              {item.cota.toFixed(2)} m
-            </span>
-            {item.diff !== 0 && (
-              <span
-                className="ticker-var"
-                style={{ color: item.diff > 0 ? '#FF9B8F' : '#6DD99A' }}
-              >
-                {item.diff > 0 ? '▲' : '▼'} {Math.abs(item.diff).toFixed(2)}
-              </span>
-            )}
-            {item.cls !== 'g' && badgeStyle(item.cls) && (
-              <span className="ticker-badge" style={badgeStyle(item.cls)}>
-                {item.status}
-              </span>
-            )}
-          </div>
-        ))}
+    <div className="ticker-wrap">
+      <div style={{ flexShrink:0, paddingLeft:12, paddingRight:8, zIndex:3, position:'relative' }}>
+        <div className="ticker-pill">
+          <div className="ticker-live-dot"/>
+          <span className="ticker-live-lbl">ao vivo</span>
+        </div>
+      </div>
+      <div className="ticker-scroll" style={{ position:'relative', overflow:'hidden' }}>
+        <div className="ticker-gradient-left"/>
+        <div className="ticker-track">
+          {doubled.map((item, i) => (
+            <div key={`${item.nome}-${i}`} className="ticker-item" onClick={() => onClickEstacao(item.nome)}>
+              <span className="ticker-name" style={{ color: item.cls!=='g' ? (item.cls==='d'?'#FF9B8F':'#F5C87A') : 'rgba(237,233,225,.6)' }}>{item.nome}</span>
+              <span className="ticker-sep"/>
+              <span className="ticker-cota" style={{ color: COR[item.cls] }}>{item.cota.toFixed(2)} m</span>
+              {item.diff !== 0 && (
+                <span className="ticker-var" style={{ color: item.diff>0?'#FF9B8F':'#6DD99A' }}>
+                  {item.diff>0?'▲':'▼'} {Math.abs(item.diff).toFixed(2)}
+                </span>
+              )}
+              {item.cls!=='g' && badgeStyle(item.cls) && (
+                <span className="ticker-badge" style={badgeStyle(item.cls)}>{item.status}</span>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="ticker-gradient-right"/>
       </div>
     </div>
   );
 }
 
-/* ══════════════════════════════════════════════════════════════════════════ */
+function UpdateCard({ fonte, ultimaDataStr, updateInfo }) {
+  const isSace = fonte === 'sace';
+  const isAna = fonte === 'ana';
+  const fonteC = isSace ? 'fonte-sace' : fonte==='open-meteo' ? 'fonte-openmeteo' : isAna ? 'fonte-ana' : 'fonte-fallback';
+  const fonteL = isSace ? '✓ SACE/SGB' : fonte==='open-meteo' ? '~ Open-Meteo' : isAna ? '✓ ANA HidroWS' : '⚠ Cache local';
+
+  return (
+    <div className="update-card">
+      <div className="card-hdr" style={{ marginBottom:12 }}>
+        <div>
+          <div className="card-ttl">Última atualização</div>
+          <div className="card-sub">coleta de dados</div>
+        </div>
+        <div className="uc-live">
+          <div className="uc-dot"/>
+          <span style={{ fontSize:10, color:'var(--teal)', fontFamily:'DM Mono,monospace', fontWeight:500 }}>live</span>
+        </div>
+      </div>
+      <div className="update-card-rows">
+        <div className="uc-row">
+          <span className="uc-lbl">Data</span>
+          <span className="uc-val" style={{ fontFamily:'DM Mono,monospace', fontSize:11 }}>{ultimaDataStr}</span>
+        </div>
+        <div className="uc-row">
+          <span className="uc-lbl">Turno</span>
+          <span className={`log-turno turno-${updateInfo.turno}`}>{updateInfo.turnoLabel}</span>
+        </div>
+        <div className="uc-row">
+          <span className="uc-lbl">Horários</span>
+          <span className="uc-horarios">{updateInfo.horarios.join(' · ')}</span>
+        </div>
+        <div className="uc-row">
+          <span className="uc-lbl">Próxima</span>
+          <span className="uc-val" style={{ fontFamily:'DM Mono,monospace', fontSize:12, color:'var(--text)' }}>{updateInfo.proxima}</span>
+        </div>
+        <div style={{ borderTop:'1px solid var(--border)', paddingTop:10, marginTop:2 }}>
+          <span className={`fonte-badge ${fonteC}`} style={{ marginTop:0 }}>{fonteL}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Custom tick para nomes na diagonal nos gráficos de barra
+const DiagonalTick = ({ x, y, payload }) => (
+  <g transform={`translate(${x},${y})`}>
+    <text
+      transform="rotate(-45)"
+      textAnchor="end"
+      dy={4}
+      style={{ fontSize:10, fill:'var(--muted)', fontFamily:'DM Mono,monospace' }}
+    >
+      {payload.value}
+    </text>
+  </g>
+);
+
 export default function App() {
   const [splashDone, setSplashDone] = useState(false);
   const [dados,    setDados]    = useState({});
@@ -1004,21 +706,17 @@ export default function App() {
   const mapaMainInst = useRef(null);
   const tileLayerRef = useRef(null);
 
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', tema);
-    localStorage.setItem('tema', tema);
-  }, [tema]);
+  useEffect(() => { document.documentElement.setAttribute('data-theme', tema); localStorage.setItem('tema', tema); }, [tema]);
 
   const carregar = async (est = cidade, dias = periodo) => {
     try {
       setLoading(true); setError(null);
       const [rE, rD] = await Promise.all([
         axios.get('/api/estacoes'),
-        axios.get('/api/dados', { params: { ...(est && { estacao: est }), ...(dias > 0 && { dias }) } })
+        axios.get('/api/dados', { params: { ...(est && { estacao:est }), ...(dias>0 && { dias }) } })
       ]);
       const lista = rE.data?.estacoes || [];
-      setEstacoes(lista);
-      setDados(rD.data);
+      setEstacoes(lista); setDados(rD.data);
       if (!est && lista.length) setCidade(lista[0]);
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
@@ -1032,33 +730,26 @@ export default function App() {
     const el = document.getElementById('mapa-leaflet-main');
     if (!L || !el) return;
     if (mapaMainInst.current) { mapaMainInst.current.remove(); mapaMainInst.current = null; }
-    const cfg0 = CAMADAS.find(c => c.id === camada) || CAMADAS[0];
-    const map = L.map('mapa-leaflet-main', { zoomControl:true, scrollWheelZoom:true }).setView([-3.5, -62], 5);
-    const tl = L.tileLayer(cfg0.tile, { attribution: cfg0.attr, maxZoom:16 }).addTo(map);
-    tileLayerRef.current = tl;
-    // Itera sobre TODOS os CFG, não filtra por sace_bacia
+    const cfg0 = CAMADAS.find(c => c.id===camada) || CAMADAS[0];
+    const map = L.map('mapa-leaflet-main', { zoomControl:true, scrollWheelZoom:true }).setView([-3.5,-62], 5);
+    tileLayerRef.current = L.tileLayer(cfg0.tile, { attribution:cfg0.attr, maxZoom:16 }).addTo(map);
     Object.entries(CFG).forEach(([nome, cfg]) => {
       const info = dadosAtual[nome] || {};
       const lista = info.dados || [];
       const cota = lista[lista.length-1]?.cota_m ?? 0;
-      const prev = lista.length > 1 ? (lista[lista.length-2]?.cota_m ?? cota) : cota;
+      const prev = lista.length>1?(lista[lista.length-2]?.cota_m??cota):cota;
       const diff = cota - prev;
       const { c, t } = classificar(cota, cfg);
       const cor = COR[c];
-      const pctV = Math.min((cota / (cfg.cota_max||1)) * 100, 100);
+      const pctV = Math.min((cota/(cfg.cota_max||1))*100, 100);
       const icon = L.divIcon({
-        className: '',
-        html: `<div style="position:relative;width:14px;height:14px;">
-          <div style="position:absolute;inset:-4px;border-radius:50%;background:${cor};opacity:.25;animation:marker-pulse 2.8s ease-out infinite;"></div>
-          <div style="position:absolute;inset:-8px;border-radius:50%;background:${cor};opacity:.12;animation:marker-pulse 2.8s ease-out infinite .6s;"></div>
-          <div style="width:14px;height:14px;border-radius:50%;background:${cor};border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3);position:relative;z-index:1;"></div>
-        </div>`,
-        iconSize: [14,14], iconAnchor: [7,7]
+        className:'',
+        html:`<div style="position:relative;width:14px;height:14px;"><div style="position:absolute;inset:-4px;border-radius:50%;background:${cor};opacity:.25;animation:marker-pulse 2.8s ease-out infinite;"></div><div style="width:14px;height:14px;border-radius:50%;background:${cor};border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3);position:relative;z-index:1;"></div></div>`,
+        iconSize:[14,14], iconAnchor:[7,7]
       });
       const marker = L.marker([cfg.lat, cfg.lon], { icon }).addTo(map);
-      const barW = Math.round(pctV);
-      const diffStr = diff !== 0 ? `${diff > 0 ? '▲' : '▼'} ${Math.abs(diff).toFixed(2)} m` : '—';
-      const diffColor = diff > 0 ? '#C0392B' : diff < 0 ? '#2A7A3A' : '#8A8278';
+      const diffStr = diff!==0?`${diff>0?'▲':'▼'} ${Math.abs(diff).toFixed(2)} m`:'—';
+      const diffColor = diff>0?'#C0392B':diff<0?'#2A7A3A':'#8A8278';
       marker.bindPopup(L.popup({ maxWidth:220, minWidth:180 }).setContent(`
         <div style="font-family:'Outfit',sans-serif;padding:2px">
           <div style="font-weight:600;font-size:13px;margin-bottom:2px">${nome}</div>
@@ -1068,7 +759,7 @@ export default function App() {
             <span style="font-size:18px;font-weight:600;color:${cor};font-family:'DM Mono',monospace">${cota.toFixed(2)} m</span>
           </div>
           <div style="height:4px;background:#EEEBE4;border-radius:99px;margin-bottom:10px;overflow:hidden">
-            <div style="height:100%;width:${barW}%;background:${cor};border-radius:99px;"></div>
+            <div style="height:100%;width:${Math.round(pctV)}%;background:${cor};border-radius:99px;"></div>
           </div>
           <div style="display:flex;align-items:center;justify-content:space-between">
             <div style="display:flex;align-items:center;gap:5px">
@@ -1089,234 +780,153 @@ export default function App() {
       const el = document.getElementById('mapa-leaflet-main');
       if (!el) return;
       if (window.L) { buildMapMain(dados); return; }
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      document.head.appendChild(link);
-      const sc = document.createElement('script');
-      sc.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      sc.onload = () => buildMapMain(dados);
-      document.head.appendChild(sc);
+      const link = document.createElement('link'); link.rel='stylesheet'; link.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'; document.head.appendChild(link);
+      const sc = document.createElement('script'); sc.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'; sc.onload=()=>buildMapMain(dados); document.head.appendChild(sc);
     }, 150);
     return () => clearTimeout(timer);
   }, [pagina, JSON.stringify(Object.keys(dados))]);
 
   useEffect(() => {
     if (!mapaMainInst.current || !window.L) return;
-    const cfg = CAMADAS.find(c => c.id === camada);
+    const cfg = CAMADAS.find(c => c.id===camada);
     if (cfg && tileLayerRef.current) tileLayerRef.current.setUrl(cfg.tile);
   }, [camada]);
 
-  const info    = dados[cidade] || {};
-  const lista   = info.dados    || [];
-  const ult     = lista[lista.length-1] || {};
-  const cota    = ult.cota_m ?? 0;
-  const cfgC    = CFG[cidade];
+  const info = dados[cidade] || {};
+  const lista = info.dados || [];
+  const ult = lista[lista.length-1] || {};
+  const cota = ult.cota_m ?? 0;
+  const cfgC = CFG[cidade];
   const { c:cl, t:stTxt, pct } = classificar(cota, cfgC);
-  const stColor = cl==='g' ? 'var(--teal)' : cl==='w' ? 'var(--amber)' : 'var(--red)';
-  const pico    = estimarPico(lista);
-  const fonte   = info.fonte || '';
+  const stColor = cl==='g'?'var(--teal)':cl==='w'?'var(--amber)':'var(--red)';
+  const pico = estimarPico(lista);
+  const fonte = info.fonte || '';
   const fonteLabel = { sace:'SACE/SGB', 'open-meteo':'Open-Meteo', fallback:'Cache', ana:'ANA HidroWS' }[fonte] || fonte || '—';
-  const isSace  = fonte === 'sace';
+  const isSace = fonte==='sace';
   const updateInfo = getUpdateTimes(fonte);
-  const ultimaDataStr = ult.data ? new Date(ult.data + 'T12:00:00').toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' }) : '—';
+  const ultimaDataStr = ult.data ? new Date(ult.data+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}) : '—';
 
   const todasAlertas = estacoes.map(nome => {
-    const d = dados[nome] || {};
-    const l = d.dados || [];
-    const u = l[l.length-1] || {};
-    const co = u.cota_m ?? 0;
-    const { c, t } = classificar(co, CFG[nome]);
-    return { nome, cota:co, status:t, cls:c };
-  }).filter(e => e.cls !== 'g');
-
+    const d = dados[nome]||{}; const l=d.dados||[]; const u=l[l.length-1]||{};
+    const co=u.cota_m??0; const {c,t}=classificar(co,CFG[nome]);
+    return {nome,cota:co,status:t,cls:c};
+  }).filter(e => e.cls!=='g');
   const alertCount = todasAlertas.length;
 
   const allDatasets = estacoes.map(nome => {
-    const d = dados[nome] || {};
-    const l = d.dados || [];
-    const u = l[l.length-1] || {};
-    const co = u.cota_m ?? 0;
-    const prev = l.length > 1 ? (l[l.length-2]?.cota_m ?? co) : co;
-    const { c, t } = classificar(co, CFG[nome]);
-    return { nome, cota: co, alerta: CFG[nome]?.cota_alerta || 0, pct: Math.round((co / (CFG[nome]?.cota_max||1))*100), status:t, cls:c, var: +(co - prev).toFixed(3), fonte: d.fonte || 'fallback' };
+    const d=dados[nome]||{}; const l=d.dados||[]; const u=l[l.length-1]||{};
+    const co=u.cota_m??0; const prev=l.length>1?(l[l.length-2]?.cota_m??co):co;
+    const {c,t}=classificar(co,CFG[nome]);
+    return {nome,cota:co,alerta:CFG[nome]?.cota_alerta||0,pct:Math.round((co/(CFG[nome]?.cota_max||1))*100),status:t,cls:c,var:+(co-prev).toFixed(3),fonte:d.fonte||'fallback'};
   });
 
-  const cotaBarData = allDatasets.map(d => ({ name: d.nome, cota: d.cota, alerta: d.alerta, fill: COR[d.cls] }));
-  const overallMax  = allDatasets.length ? Math.max(...allDatasets.map(d => d.cota)) : 0;
-  const emAlerta    = allDatasets.filter(d => d.cls === 'd').length;
-  const emAtencao   = allDatasets.filter(d => d.cls === 'w').length;
-  const varData     = allDatasets.map(d => ({ name: d.nome, variacao: d.var, fill: d.var > 0 ? '#C0392B' : '#2A7A3A' }));
-  const listaDash   = (dados[cidade]?.dados || []).slice(-30);
+  const cotaBarData = allDatasets.map(d=>({name:d.nome,cota:d.cota,alerta:d.alerta,fill:COR[d.cls]}));
+  const overallMax  = allDatasets.length?Math.max(...allDatasets.map(d=>d.cota)):0;
+  const emAlerta    = allDatasets.filter(d=>d.cls==='d').length;
+  const emAtencao   = allDatasets.filter(d=>d.cls==='w').length;
+  const varData     = allDatasets.map(d=>({name:d.nome,variacao:d.var,fill:d.var>0?'#C0392B':'#2A7A3A'}));
+  const listaDash   = (dados[cidade]?.dados||[]).slice(-30);
 
   const logEntries = gerarLog(dados, estacoes);
-  const logFiltrado = logEntries.filter(e => logFiltroFonte === 'todas' || e.fonte === logFiltroFonte);
-  const cacheCount = logEntries.filter(e => e.fonte === 'fallback').length;
-
-  // Estações destacadas no hero (primeiras 5)
-  const heroEstacoes = estacoes.slice(0, 5);
+  const logFiltrado = logEntries.filter(e=>logFiltroFonte==='todas'||e.fonte===logFiltroFonte);
+  const cacheCount = logEntries.filter(e=>e.fonte==='fallback').length;
 
   if (loading && !estacoes.length) return (
     <><style>{css}</style>
-    {!splashDone && <SplashScreen onDone={() => setSplashDone(true)} />}
-    <div className="state" style={{ minHeight:'100vh' }}><div className="spinner"/><span style={{ fontSize:12 }}>Carregando…</span></div>
+    {!splashDone && <SplashScreen onDone={()=>setSplashDone(true)} />}
+    <div className="state" style={{minHeight:'100vh'}}><div className="spinner"/><span style={{fontSize:12}}>Carregando…</span></div>
     </>
   );
 
   if (error && !estacoes.length) return (
     <><style>{css}</style>
-    <div className="state" style={{ minHeight:'100vh' }}>
-      <div style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:10, padding:24, maxWidth:380 }}>
-        <p style={{ fontWeight:500, color:'var(--red)', marginBottom:8 }}>Backend offline</p>
-        <p style={{ fontSize:12, color:'var(--muted)', lineHeight:1.7 }}>
-          Rode: <code style={{ fontSize:11, fontFamily:'DM Mono,monospace', background:'var(--surf2)', padding:'4px 8px', borderRadius:4 }}>
-            uvicorn backend.server:app --port 5000 --reload
-          </code>
+    <div className="state" style={{minHeight:'100vh'}}>
+      <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:24,maxWidth:380}}>
+        <p style={{fontWeight:500,color:'var(--red)',marginBottom:8}}>Backend offline</p>
+        <p style={{fontSize:12,color:'var(--muted)',lineHeight:1.7}}>
+          Rode: <code style={{fontSize:11,fontFamily:'DM Mono,monospace',background:'var(--surf2)',padding:'4px 8px',borderRadius:4}}>uvicorn backend.server:app --port 5000 --reload</code>
         </p>
-        <button className="btn-sm" style={{ marginTop:14 }} onClick={() => carregar('', 0)}>Tentar novamente</button>
+        <button className="btn-sm" style={{marginTop:14}} onClick={()=>carregar('',0)}>Tentar novamente</button>
       </div>
     </div></>
   );
 
   let redeOrdenada = [...allDatasets];
-  if (ordenacao === 'cota-desc') redeOrdenada.sort((a,b) => b.cota - a.cota);
-  else if (ordenacao === 'cota-asc') redeOrdenada.sort((a,b) => a.cota - b.cota);
-  else if (ordenacao === 'status') redeOrdenada.sort((a,b) => {
-    const o = { Emergência:0, Alerta:1, Atenção:2, Normal:3 };
-    return (o[a.status]||3) - (o[b.status]||3);
-  });
-  else redeOrdenada.sort((a,b) => a.nome.localeCompare(b.nome));
+  if (ordenacao==='cota-desc') redeOrdenada.sort((a,b)=>b.cota-a.cota);
+  else if (ordenacao==='cota-asc') redeOrdenada.sort((a,b)=>a.cota-b.cota);
+  else if (ordenacao==='status') redeOrdenada.sort((a,b)=>({Emergência:0,Alerta:1,Atenção:2,Normal:3}[a.status]||3)-({Emergência:0,Alerta:1,Atenção:2,Normal:3}[b.status]||3));
+  else redeOrdenada.sort((a,b)=>a.nome.localeCompare(b.nome));
+
+  const handleTickerClick = (nome) => { setCidade(nome); setPagina('estacao'); };
 
   const renderPage = () => {
 
-    /* ═══ HOME ═══════════════════════════════════════════════════════════════ */
     if (pagina === 'home') return (
       <div className="home-page">
+        <StationTicker estacoes={estacoes} dados={dados} onClickEstacao={handleTickerClick}/>
+
         <div className="home-hero">
-          <div className="home-hero-content">
-            {/* Coluna esquerda: texto */}
-            <div className="home-hero-left">
-              <div className="home-eyebrow">Plataforma de Monitoramento Hidrológico</div>
-
-              <div className="home-title">
-                A Amazônia <span className="ht-acc">monitorada</span><br/>
-                em <span className="ht-teal">tempo real.</span>
-              </div>
-
-              <p className="home-desc">
-                FluviAM acompanha cotas, alertas de enchente e tendências em {estacoes.length || 8} estações
-                fluviométricas — do Rio Negro ao Solimões.
-              </p>
-
-              <div className="home-cta-row">
-                <button className="home-cta-primary" onClick={() => setPagina('mapa')}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6z M9 3v15 M15 6v15"/>
-                  </svg>
-                  Ver Mapa ao Vivo
-                </button>
-                <button className="home-cta-secondary" onClick={() => setPagina('dashboard')}>
-                  Acessar Dashboard
-                </button>
-                {alertCount > 0 && (
-                  <button className="btn-sm" style={{ borderColor:'rgba(192,57,43,.4)', color:'var(--red)', background:'rgba(192,57,43,.08)' }} onClick={() => setPagina('alertas')}>
-                    ⚠ {alertCount} alerta{alertCount > 1 ? 's' : ''}
-                  </button>
-                )}
-              </div>
-
-              <div className="home-stats">
-                {[
-                  { val: estacoes.length || 8,                               lbl: 'Estações' },
-                  { val: alertCount,                                          lbl: 'Em alerta', color: alertCount > 0 ? '#D94F3D' : '#3DB89A' },
-                  { val: overallMax > 0 ? `${overallMax.toFixed(1)} m` : '—', lbl: 'Cota máx. obs.' },
-                  { val: 'Ao vivo',                                           lbl: 'SACE / SGB', color:'#3DB89A' },
-                ].map((s,i) => (
-                  <div key={i} className="home-stat">
-                    <div className="home-stat-val" style={s.color ? { color:s.color } : {}}>{s.val}</div>
-                    <div className="home-stat-lbl">{s.lbl}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Divisor vertical */}
-            <div className="home-hero-divider"/>
-
-            {/* Coluna direita: mini-cards de estações em tempo real */}
-            <div className="home-hero-right">
-              <div style={{ fontSize:9, letterSpacing:'.12em', textTransform:'uppercase', color:'rgba(255,255,255,.25)', fontFamily:"'DM Mono',monospace", marginBottom:4 }}>
-                Leitura atual
-              </div>
-              {heroEstacoes.map(nome => {
-                const d  = dados[nome] || {};
-                const l  = d.dados || [];
-                const u  = l[l.length - 1] || {};
-                const co = u.cota_m ?? 0;
-                const prev = l.length > 1 ? (l[l.length-2]?.cota_m ?? co) : co;
-                const diff = +(co - prev).toFixed(2);
-                const { c } = classificar(co, CFG[nome]);
-                return (
-                  <div
-                    key={nome}
-                    className="hero-station-card"
-                    onClick={() => { setCidade(nome); setPagina('estacao'); }}
-                  >
-                    <div className="hero-sc-dot" style={{ background: COR[c] }}/>
-                    <div className="hero-sc-name">{nome}</div>
-                    <div className="hero-sc-cota" style={{ color: COR[c] }}>
-                      {co.toFixed(2)} m
-                    </div>
-                    {diff !== 0 && (
-                      <div
-                        className="hero-sc-var"
-                        style={{ color: diff > 0 ? '#FF9B8F' : '#6DD99A' }}
-                      >
-                        {diff > 0 ? '▲' : '▼'}{Math.abs(diff).toFixed(2)}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-              {estacoes.length > 5 && (
-                <button
-                  onClick={() => setPagina('rede')}
-                  style={{
-                    marginTop:4, background:'transparent',
-                    border:'1px solid rgba(255,255,255,.1)',
-                    color:'rgba(255,255,255,.35)', borderRadius:6,
-                    padding:'6px 12px', fontSize:10, cursor:'pointer',
-                    fontFamily:"'DM Mono',monospace", letterSpacing:'.06em',
-                    textTransform:'uppercase', transition:'all .15s',
-                  }}
-                  onMouseEnter={e => e.target.style.color='rgba(255,255,255,.65)'}
-                  onMouseLeave={e => e.target.style.color='rgba(255,255,255,.35)'}
-                >
-                  +{estacoes.length - 5} estações →
-                </button>
-              )}
-            </div>
+          <div className="home-eyebrow">Monitor Hidrológico · Bacia Amazônica</div>
+          <div className="home-title">
+            A Amazônia <span className="ht-acc">monitorada</span><br/>
+            em <span className="ht-teal">tempo real.</span>
           </div>
 
-          {/* Ticker de estações — substitui o scroll hint */}
-          <StationTicker
-            estacoes={estacoes}
-            dados={dados}
-            config={CFG}
-            onClickEstacao={(nome) => { setCidade(nome); setPagina('estacao'); }}
-          />
+          {/* Métricas inline — substitui o parágrafo descritivo */}
+          <div style={{display:'flex',gap:32,marginBottom:28,position:'relative',zIndex:1}}>
+            {[
+              {val:`${estacoes.length||20}`, lbl:'Estações ativas'},
+              {val:'SACE / SGB', lbl:'Fonte de dados'},
+              {val:'Ao vivo', lbl:'Atualização', color:'#3DB89A'},
+              ...(alertCount>0?[{val:`${alertCount}`, lbl:'Em alerta', color:'#D94F3D'}]:[]),
+            ].map((s,i)=>(
+              <div key={i} style={{display:'flex',flexDirection:'column',gap:4,position:'relative'}}>
+                {i>0&&<div style={{position:'absolute',left:-16,top:0,bottom:0,width:1,background:'rgba(255,255,255,.06)'}}/>}
+                <span style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:400,color:s.color||'rgba(237,233,225,.75)',letterSpacing:'-.01em',lineHeight:1}}>{s.val}</span>
+                <span style={{fontSize:9,color:'rgba(255,255,255,.2)',letterSpacing:'.1em',textTransform:'uppercase',fontFamily:"'DM Mono',monospace"}}>{s.lbl}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="home-cta-row">
+            <button className="home-cta-primary" onClick={()=>setPagina('mapa')}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6z M9 3v15 M15 6v15"/>
+              </svg>
+              Ver Mapa ao Vivo
+            </button>
+            <button className="home-cta-secondary" onClick={()=>setPagina('dashboard')}>Acessar Dashboard</button>
+            {alertCount>0 && (
+              <button className="btn-sm" style={{borderColor:'rgba(192,57,43,.4)',color:'var(--red)',background:'rgba(192,57,43,.08)'}} onClick={()=>setPagina('alertas')}>
+                ⚠ {alertCount} alerta{alertCount>1?'s':''}
+              </button>
+            )}
+          </div>
+          <div className="home-stats">
+            {[
+              { val:estacoes.length||20, lbl:'Estações' },
+              { val:alertCount, lbl:'Em alerta', color:alertCount>0?'#D94F3D':'#3DB89A' },
+              { val:overallMax>0?`${overallMax.toFixed(1)} m`:'—', lbl:'Cota máx. obs.' },
+              { val:'Ao vivo', lbl:'SACE / SGB', color:'#3DB89A' },
+            ].map((s,i) => (
+              <div key={i} className="home-stat">
+                <div className="home-stat-val" style={s.color?{color:s.color}:{}}>{s.val}</div>
+                <div className="home-stat-lbl">{s.lbl}</div>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="home-features">
           {[
-            { id:'mapa',      ttl:'Mapa ao Vivo',        dsc:'Marcadores pulsantes com status em tempo real de cada estação.',                ico:'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6z M9 3v15 M15 6v15',                                    color:'#1B7C6C', bg:'var(--tealL)' },
-            { id:'estacao',   ttl:'Estação Detalhada',   dsc:'Histórico de cotas, previsão de pico e tendência para cada ponto.',             ico:'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10',                             color:'#C47A1E', bg:'var(--amberL)' },
-            { id:'alertas',   ttl:'Sistema de Alertas',  dsc:'Notificações automáticas quando estações superam a cota de atenção.',           ico:'M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z M12 9v4 M12 17h.01', color:'#C0392B', bg:'var(--redL)' },
-            { id:'rede',      ttl:'Rede de Estações',    dsc:'Localização, rio e status de toda a rede, por região da Bacia Amazônica.',      ico:'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z M12 10a2 2 0 100-4 2 2 0 000 4',            color:'#1D4E6E', bg:'var(--navyL)' },
-            { id:'log',       ttl:'Log de Atualizações', dsc:'Histórico de todas as coletas com horário, turno e fonte de cada registro.',    ico:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2 M9 5a2 2 0 002 2h2a2 2 0 002-2 M9 5a2 2 0 012-2h2a2 2 0 012 2 M9 12h6 M9 16h4', color:'#2A7A3A', bg:'rgba(42,122,58,.1)' },
-            { id:'dashboard', ttl:'Dashboard Analítico', dsc:'Gráficos comparativos e análise consolidada de toda a bacia amazônica.',        ico:'M18 20V10 M12 20V4 M6 20v-6',                                                            color:'#1D5FAC', bg:'rgba(29,95,172,.1)' },
+            { id:'mapa',      ttl:'Mapa ao Vivo',        dsc:'Marcadores pulsantes com status em tempo real de cada estação.', ico:'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6z M9 3v15 M15 6v15', color:'#1A6B5C', bg:'var(--tealL)' },
+            { id:'estacao',   ttl:'Estação Detalhada',   dsc:'Histórico de cotas, previsão de pico e tendência para cada ponto.', ico:'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10', color:'#B8722A', bg:'var(--amberL)' },
+            { id:'alertas',   ttl:'Sistema de Alertas',  dsc:'Notificações automáticas quando estações superam a cota de atenção.', ico:'M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z M12 9v4 M12 17h.01', color:'#C0392B', bg:'var(--redL)' },
+            { id:'rede',      ttl:'Rede de Estações',    dsc:'Localização, rio e status de toda a rede, por região da Bacia Amazônica.', ico:'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z M12 10a2 2 0 100-4 2 2 0 000 4', color:'#1D4E6E', bg:'var(--navyL)' },
+            { id:'log',       ttl:'Log de Atualizações', dsc:'Histórico de todas as coletas com horário, turno e fonte de cada registro.', ico:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2 M9 5a2 2 0 002 2h2a2 2 0 002-2 M9 5a2 2 0 012-2h2a2 2 0 012 2 M9 12h6 M9 16h4', color:'#2A7A3A', bg:'rgba(42,122,58,.1)' },
+            { id:'dashboard', ttl:'Dashboard Analítico', dsc:'Gráficos comparativos e análise consolidada de toda a bacia amazônica.', ico:'M18 20V10 M12 20V4 M6 20v-6', color:'#1D5FAC', bg:'rgba(29,95,172,.1)' },
           ].map((f,i) => (
-            <div key={i} className="home-feat" style={{ '--feat-color':f.color, '--feat-bg':f.bg }} onClick={() => setPagina(f.id)}>
+            <div key={i} className="home-feat" style={{'--feat-color':f.color,'--feat-bg':f.bg}} onClick={()=>setPagina(f.id)}>
               <div className="home-feat-ico"><svg viewBox="0 0 24 24"><path d={f.ico}/></svg></div>
               <div className="home-feat-ttl">{f.ttl}</div>
               <div className="home-feat-dsc">{f.dsc}</div>
@@ -1329,21 +939,21 @@ export default function App() {
           <div>
             <div className="home-about-ttl">O que é o FluviAM?</div>
             <p className="home-about-txt">
-              FluviAM é um sistema de monitoramento hidrológico que acompanha o comportamento dos
-              rios da Bacia Amazônica, integrando dados reais do SACE/SGB. Oferece cotas atualizadas,
-              histórico de níveis e alertas automáticos para {estacoes.length || 8} municípios da região.
+              FluviAM é um sistema de monitoramento hidrológico que acompanha o comportamento dos rios da Bacia Amazônica,
+              integrando dados reais do SACE/SGB e da ANA. Oferece cotas atualizadas, histórico de níveis e alertas
+              automáticos para {estacoes.length||20} municípios da região.
             </p>
           </div>
           <div className="home-about-right">
             {[
-              { cor:'#1B7C6C', txt:'Dados em tempo real via SACE/SGB' },
-              { cor:'#C47A1E', txt:'Alertas automáticos de enchente' },
-              { cor:'#C0392B', txt:`Monitoramento de ${estacoes.length || 8} municípios` },
+              { cor:'#1A6B5C', txt:'Dados em tempo real via SACE/SGB' },
+              { cor:'#B8722A', txt:'Alertas automáticos de enchente' },
+              { cor:'#C0392B', txt:`Monitoramento de ${estacoes.length||20} municípios` },
               { cor:'#2A7A3A', txt:'Previsão de pico por tendência' },
-              { cor:'#1D4E6E', txt:'Histórico completo de cotas' },
+              { cor:'#1D4E6E', txt:'Integração com ANA HidroWebService' },
             ].map((item,i) => (
               <div key={i} className="home-about-item">
-                <div className="hai-dot" style={{ background:item.cor }}/>
+                <div className="hai-dot" style={{background:item.cor}}/>
                 <span>{item.txt}</span>
               </div>
             ))}
@@ -1351,28 +961,24 @@ export default function App() {
         </div>
 
         <div className="home-footer">
-          <div style={{ display:'flex', justifyContent:'center', marginBottom:10 }}>
-            <BanzeiroWave width={80} dark={tema === 'dark'} />
-          </div>
-          <div style={{ fontSize:10, color:'var(--faint)', fontFamily:'DM Mono,monospace', letterSpacing:'.1em' }}>
-            Monitor Hidrológico · Bacia Amazônica · 2026
+          <div style={{fontSize:10,color:'var(--faint)',fontFamily:'DM Mono,monospace',letterSpacing:'.1em'}}>
+            FluviAM · Monitor Hidrológico · Bacia Amazônica · 2026
           </div>
         </div>
       </div>
     );
 
-    /* ═══ MAPA ════════════════════════════════════════════════════════════════ */
-    if (pagina === 'mapa') return (
+    if (pagina==='mapa') return (
       <div className="mapa-shell">
         <div className="mapa-body">
-          <div id="mapa-leaflet-main" style={{ width:'100%', height:'100%' }}/>
+          <div id="mapa-leaflet-main" style={{width:'100%',height:'100%'}}/>
           <div className="map-controls">
             <div className="map-ctrl-card">
               <div className="map-ctrl-ttl">Camada de mapa</div>
               {CAMADAS.map(c => (
-                <button key={c.id} className={`layer-btn${camada === c.id ? ' active' : ''}`}
-                  onClick={() => { setCamada(c.id); if (mapaMainInst.current && tileLayerRef.current) tileLayerRef.current.setUrl(c.tile); }}>
-                  <div className="layer-dot" style={{ background:c.color }}/>{c.label}
+                <button key={c.id} className={`layer-btn${camada===c.id?' active':''}`}
+                  onClick={()=>{setCamada(c.id);if(mapaMainInst.current&&tileLayerRef.current)tileLayerRef.current.setUrl(c.tile);}}>
+                  <div className="layer-dot" style={{background:c.color}}/>{c.label}
                 </button>
               ))}
             </div>
@@ -1387,393 +993,266 @@ export default function App() {
       </div>
     );
 
-    /* ═══ ESTAÇÃO ════════════════════════════════════════════════════════════ */
-    if (pagina === 'estacao') return (
+    if (pagina==='estacao') return (
       <>
         <nav className="city-tabs">
           {estacoes.map(c => {
-            // Badge na tab: mostra ponto vermelho se estação em alerta/atenção
-            const d = dados[c] || {};
-            const l = d.dados || [];
-            const u = l[l.length-1] || {};
-            const co = u.cota_m ?? 0;
-            const { cls: tc } = classificar(co, CFG[c]) || {};
-            const emAlertaTab = tc === 'd' || tc === 'w';
+            const d=dados[c]||{}; const l=d.dados||[]; const u=l[l.length-1]||{};
+            const co=u.cota_m??0; const {c:tc}=classificar(co,CFG[c])||{};
             return (
-              <button key={c} className={`c-tab${c === cidade ? ' active' : ''}`} onClick={() => setCidade(c)}>
-                {c}{emAlertaTab && <span className="cdot" style={{ background: tc === 'd' ? 'var(--red)' : 'var(--amber)' }}/>}
+              <button key={c} className={`c-tab${c===cidade?' active':''}`} onClick={()=>setCidade(c)}>
+                {c}{(tc==='d'||tc==='w')&&<span className="cdot" style={{background:tc==='d'?'var(--red)':'var(--amber)'}}/>}
               </button>
             );
           })}
         </nav>
 
-        {lista.length > 0 && (
-          <div className="update-bar">
-            <div className="update-bar-inner">
-              <span className="u-dot"/>
-              <div className="u-item">
-                <span className="u-label">Última atualização</span>
-                <strong style={{ fontFamily:'DM Mono,monospace', fontSize:11 }}>{ultimaDataStr}</strong>
-              </div>
-              <div className="u-sep"/>
-              <div className="u-item">
-                <span className="u-label">Turno</span>
-                <span className={`log-turno turno-${updateInfo.turno}`}>{updateInfo.turnoLabel}</span>
-              </div>
-              <div className="u-sep"/>
-              <div className="u-item">
-                <span className="u-label">Horários</span>
-                <span style={{ fontFamily:'DM Mono,monospace', fontSize:11 }}>{updateInfo.horarios.join(' · ')}</span>
-              </div>
-              <div className="u-sep"/>
-              <div className="u-item">
-                <span className="u-label">Próxima</span>
-                <strong style={{ fontFamily:'DM Mono,monospace', fontSize:11 }}>{updateInfo.proxima}</strong>
-              </div>
-            </div>
-            <div className="update-bar-right">
-              <span className={`fonte-badge ${isSace ? 'fonte-sace' : fonte === 'open-meteo' ? 'fonte-openmeteo' : fonte === 'ana' ? 'fonte-ana' : 'fonte-fallback'}`}>
-                {isSace ? '✓ Dados reais SACE' : fonte === 'open-meteo' ? '~ Estimativa Open-Meteo' : fonte === 'ana' ? '✓ ANA HidroWS' : '⚠ Cache local'}
-              </span>
-            </div>
+        <div className="scroll">
+          <div className="filtro-row" style={{marginTop:4}}>
+            <span className="filtro-lbl">Período:</span>
+            <select className="filtro-sel" value={periodo} onChange={e=>setPeriodo(Number(e.target.value))}>
+              {PERIODOS.map(p=><option key={p.value} value={p.value}>{p.label}</option>)}
+            </select>
+            {loading&&<div className="spinner" style={{width:15,height:15}}/>}
           </div>
-        )}
 
-        <div className="filtro-row" style={{ marginTop:12 }}>
-          <span className="filtro-lbl">Período:</span>
-          <select className="filtro-sel" value={periodo} onChange={e => setPeriodo(Number(e.target.value))}>
-            {PERIODOS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-          </select>
-          {loading && <div className="spinner" style={{ width:15, height:15 }}/>}
-        </div>
+          <FloodAlert estacao={cidade} cotaAtual={cota} cotaAlerta={cfgC?.cota_alerta} cotaEmergencia={cfgC?.cota_emergencia}/>
 
-        {/* ALERTA DINÂMICO — substitui ALERTAS_FIXOS */}
-        <FloodAlert
-          estacao={cidade}
-          cotaAtual={cota}
-          cotaAlerta={cfgC?.cota_alerta}
-          cotaEmergencia={cfgC?.cota_emergencia}
-        />
-
-        {!loading && lista.length === 0
-          ? <div className="state"><span>Sem dados para <strong>{cidade}</strong>.</span></div>
-          : <>
-            <div className="kpi-grid">
-              <div className="kpi">
-                <div className="kpi-lbl">Cota Atual</div>
-                <div className={`kpi-val ${cl}`}>{cota.toFixed(2)}</div>
-                <div className="kpi-unit">metros</div>
-              </div>
-              <div className="kpi">
-                <div className="kpi-lbl">Cota de Alerta</div>
-                <div className="kpi-val">{cfgC?.cota_alerta?.toFixed(2) ?? '—'}</div>
-                <div className="kpi-unit">metros</div>
-              </div>
-              <div className="kpi">
-                <div className="kpi-lbl">% do Máximo</div>
-                <div className={`kpi-val ${cl}`}>{pct.toFixed(0)}%</div>
-                <div className="kpi-unit">histórico</div>
-              </div>
-              <div className="kpi">
-                <div className="kpi-lbl">Fonte</div>
-                <div className="kpi-val" style={{ fontSize:12, paddingTop:4 }}>{fonteLabel}</div>
-                <div className={`fonte-badge ${isSace ? 'fonte-sace' : fonte === 'open-meteo' ? 'fonte-openmeteo' : fonte === 'ana' ? 'fonte-ana' : 'fonte-fallback'}`} style={{ display:'inline-flex' }}>
-                  {isSace ? '✓ dados reais' : fonte === 'open-meteo' ? '~ estimativa' : fonte === 'ana' ? '✓ ANA' : '⚠ cache'}
+          {!loading&&lista.length===0
+            ?<div className="state"><span>Sem dados para <strong>{cidade}</strong>.</span></div>
+            :<>
+              <div className="kpi-grid">
+                <div className="kpi"><div className="kpi-lbl">Cota Atual</div><div className={`kpi-val ${cl}`}>{cota.toFixed(2)}</div><div className="kpi-unit">metros</div></div>
+                <div className="kpi"><div className="kpi-lbl">Cota de Alerta</div><div className="kpi-val">{cfgC?.cota_alerta?.toFixed(2)??'—'}</div><div className="kpi-unit">metros</div></div>
+                <div className="kpi"><div className="kpi-lbl">% do Máximo</div><div className={`kpi-val ${cl}`}>{pct.toFixed(0)}%</div><div className="kpi-unit">histórico</div></div>
+                <div className="kpi">
+                  <div className="kpi-lbl">Fonte</div>
+                  <div className="kpi-val" style={{fontSize:12,paddingTop:4}}>{fonteLabel}</div>
+                  <div className={`fonte-badge ${isSace?'fonte-sace':fonte==='open-meteo'?'fonte-openmeteo':fonte==='ana'?'fonte-ana':'fonte-fallback'}`} style={{display:'inline-flex'}}>
+                    {isSace?'✓ dados reais':fonte==='open-meteo'?'~ estimativa':fonte==='ana'?'✓ ANA':'⚠ cache'}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="chart-grid">
+              <div className="chart-grid">
+                <div className="card">
+                  <div className="card-hdr">
+                    <div><div className="card-ttl">Cota hídrica — histórico</div><div className="card-sub">{cidade} · {cfgC?.rio}</div></div>
+                    <span className="badge b-teal" style={{fontSize:10}}>{lista.length} dias</span>
+                  </div>
+                  <div className="chart-box">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={lista} margin={{top:4,right:8,left:0,bottom:0}}>
+                        <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false}/>
+                        <XAxis dataKey="data" tickFormatter={fmtD} tick={{fontSize:10,fill:'var(--muted)',fontFamily:'DM Mono,monospace'}} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
+                        <YAxis tick={{fontSize:10,fill:'var(--muted)',fontFamily:'DM Mono,monospace'}} axisLine={false} tickLine={false} width={34} domain={['auto','auto']}/>
+                        <Tooltip content={<Tip/>}/>
+                        {cfgC&&<ReferenceLine y={cfgC.cota_alerta} stroke="var(--amber)" strokeDasharray="3 3" strokeWidth={1.5} label={{value:'Alerta',position:'insideTopRight',fontSize:9,fill:'var(--amber)'}}/>}
+                        <Line type="monotone" dataKey="cota_m" name="Cota (m)" stroke="var(--teal)" strokeWidth={1.8} dot={false} activeDot={{r:4,strokeWidth:0}}/>
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div style={{display:'flex',flexDirection:'column',gap:12}}>
+                  <div className="card" style={{flex:'0 0 auto'}}>
+                    <div className="card-hdr" style={{marginBottom:14}}><div><div className="card-ttl">Nível hídrico</div><div className="card-sub">status atual</div></div></div>
+                    <div className="nivel">
+                      <div><div className="n-lbl">Cota</div><div className="n-val">{cota.toFixed(2)} m</div><div className="n-bar"><div className={`n-fill ${cl}`} style={{width:`${pct.toFixed(1)}%`}}/></div></div>
+                      <div><div className="n-lbl">Margem p/ alerta</div><div className="n-val">{cfgC?(cfgC.cota_alerta-cota).toFixed(2):'—'} m</div><div className="n-bar"><div className="n-fill g" style={{width:`${Math.min((cota/(cfgC?.cota_alerta||1))*100,100).toFixed(1)}%`}}/></div></div>
+                      <div><div className="n-lbl">Status</div><div className="n-status" style={{color:stColor}}>{stTxt}</div></div>
+                    </div>
+                  </div>
+
+                  {pico && (
+                    <div className="card" style={{flex:'0 0 auto'}}>
+                      <div className="card-ttl">Previsão de pico</div>
+                      <div className="card-sub" style={{marginBottom:12}}>por tendência</div>
+                      <div className="pico">
+                        <div><div className="n-lbl">Data estimada</div><div className="n-val" style={{fontSize:15}}>{pico.data}</div></div>
+                        <div><div className="n-lbl">Cota estimada</div><div className="n-val" style={{fontSize:15}}>{pico.cota} m</div></div>
+                        <div className="n-lbl">{pico.desc}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {lista.length > 0 && (
+                    <UpdateCard fonte={fonte} ultimaDataStr={ultimaDataStr} updateInfo={updateInfo}/>
+                  )}
+                </div>
+              </div>
+
               <div className="card">
-                <div className="card-hdr">
-                  <div>
-                    <div className="card-ttl">Cota hídrica — histórico</div>
-                    <div className="card-sub">{cidade} · {cfgC?.rio}</div>
-                  </div>
-                  <span className="badge b-teal" style={{ fontSize:10 }}>{lista.length} dias</span>
-                </div>
-                <div className="chart-box">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={lista} margin={{ top:4, right:8, left:0, bottom:0 }}>
-                      <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false}/>
-                      <XAxis dataKey="data" tickFormatter={fmtD} tick={{ fontSize:10, fill:'var(--muted)', fontFamily:'DM Mono,monospace' }} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
-                      <YAxis tick={{ fontSize:10, fill:'var(--muted)', fontFamily:'DM Mono,monospace' }} axisLine={false} tickLine={false} width={34} domain={['auto','auto']}/>
-                      <Tooltip content={<Tip/>}/>
-                      {cfgC && <ReferenceLine y={cfgC.cota_alerta} stroke="var(--amber)" strokeDasharray="3 3" strokeWidth={1.5} label={{ value:'Alerta', position:'insideTopRight', fontSize:9, fill:'var(--amber)' }}/>}
-                      <Line type="monotone" dataKey="cota_m" name="Cota (m)" stroke="var(--teal)" strokeWidth={1.8} dot={false} activeDot={{ r:4, strokeWidth:0 }}/>
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
+                <div className="card-hdr"><div><div className="card-ttl">Todas as estações</div><div className="card-sub">leitura mais recente</div></div><button className="btn-sm" onClick={()=>setPagina('rede')}>Ver rede completa →</button></div>
+                <table className="est-tbl">
+                  <thead><tr><th>Estação</th><th>Rio</th><th style={{textAlign:'right'}}>Cota (m)</th><th style={{textAlign:'right'}}>Alerta (m)</th><th style={{textAlign:'right'}}>Var. dia</th><th style={{textAlign:'right'}}>Status</th></tr></thead>
+                  <tbody>
+                    {estacoes.map(nome=>{
+                      const d=dados[nome]||{}; const l=d.dados||[]; const u=l[l.length-1]||{};
+                      const co=u.cota_m??0; const prev=l.length>1?(l[l.length-2]?.cota_m??co):co;
+                      const diff=co-prev; const {c,t}=classificar(co,CFG[nome]);
+                      return (<tr key={nome} onClick={()=>setCidade(nome)}>
+                        <td style={{fontWeight:500}}><span className="tbl-dot" style={{background:COR[c]}}/>{nome}</td>
+                        <td style={{color:'var(--muted)',fontSize:11}}>{CFG[nome]?.rio||'—'}</td>
+                        <td style={{textAlign:'right',fontFamily:'DM Mono,monospace'}}>{co.toFixed(2)}</td>
+                        <td style={{textAlign:'right',fontFamily:'DM Mono,monospace',color:'var(--muted)'}}>{CFG[nome]?.cota_alerta?.toFixed(2)||'—'}</td>
+                        <td style={{textAlign:'right',fontFamily:'DM Mono,monospace',color:diff>0?'var(--red)':diff<0?'var(--green)':'var(--muted)'}}>{diff>0?'+':''}{diff.toFixed(2)}</td>
+                        <td style={{textAlign:'right',color:COR[c],fontWeight:500}}>{t}</td>
+                      </tr>);
+                    })}
+                  </tbody>
+                </table>
               </div>
-              <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-                <div className="card" style={{ flex:1 }}>
-                  <div className="card-hdr" style={{ marginBottom:14 }}>
-                    <div><div className="card-ttl">Nível hídrico</div><div className="card-sub">status atual</div></div>
-                  </div>
-                  <div className="nivel">
-                    <div>
-                      <div className="n-lbl">Cota</div><div className="n-val">{cota.toFixed(2)} m</div>
-                      <div className="n-bar"><div className={`n-fill ${cl}`} style={{ width:`${pct.toFixed(1)}%` }}/></div>
-                    </div>
-                    <div>
-                      <div className="n-lbl">Margem p/ alerta</div>
-                      <div className="n-val">{cfgC ? (cfgC.cota_alerta - cota).toFixed(2) : '—'} m</div>
-                      <div className="n-bar"><div className="n-fill g" style={{ width:`${Math.min((cota/(cfgC?.cota_alerta||1))*100, 100).toFixed(1)}%` }}/></div>
-                    </div>
-                    <div><div className="n-lbl">Status</div><div className="n-status" style={{ color:stColor }}>{stTxt}</div></div>
-                  </div>
-                </div>
-                {pico && (
-                  <div className="card">
-                    <div className="card-ttl">Previsão de pico</div>
-                    <div className="card-sub" style={{ marginBottom:12 }}>por tendência</div>
-                    <div className="pico">
-                      <div><div className="n-lbl">Data estimada</div><div className="n-val" style={{ fontSize:15 }}>{pico.data}</div></div>
-                      <div><div className="n-lbl">Cota estimada</div><div className="n-val" style={{ fontSize:15 }}>{pico.cota} m</div></div>
-                      <div className="n-lbl">{pico.desc}</div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="card">
-              <div className="card-hdr">
-                <div><div className="card-ttl">Todas as estações</div><div className="card-sub">leitura mais recente</div></div>
-                <button className="btn-sm" onClick={() => setPagina('rede')}>Ver rede completa →</button>
-              </div>
-              <table className="est-tbl">
-                <thead><tr><th>Estação</th><th>Rio</th><th style={{ textAlign:'right' }}>Cota (m)</th><th style={{ textAlign:'right' }}>Alerta (m)</th><th style={{ textAlign:'right' }}>Var. dia</th><th style={{ textAlign:'right' }}>Status</th></tr></thead>
-                <tbody>
-                  {estacoes.map(nome => {
-                    const d = dados[nome] || {};
-                    const l = d.dados || [];
-                    const u = l[l.length-1] || {};
-                    const co = u.cota_m ?? 0;
-                    const prev = l.length > 1 ? (l[l.length-2]?.cota_m ?? co) : co;
-                    const diff = co - prev;
-                    const { c, t } = classificar(co, CFG[nome]);
-                    return (
-                      <tr key={nome} onClick={() => setCidade(nome)}>
-                        <td style={{ fontWeight:500 }}><span className="tbl-dot" style={{ background:COR[c] }}/>{nome}</td>
-                        <td style={{ color:'var(--muted)', fontSize:11 }}>{CFG[nome]?.rio || '—'}</td>
-                        <td style={{ textAlign:'right', fontFamily:'DM Mono,monospace' }}>{co.toFixed(2)}</td>
-                        <td style={{ textAlign:'right', fontFamily:'DM Mono,monospace', color:'var(--muted)' }}>{CFG[nome]?.cota_alerta?.toFixed(2) || '—'}</td>
-                        <td style={{ textAlign:'right', fontFamily:'DM Mono,monospace', color: diff > 0 ? 'var(--red)' : diff < 0 ? 'var(--green)' : 'var(--muted)' }}>{diff > 0 ? '+' : ''}{diff.toFixed(2)}</td>
-                        <td style={{ textAlign:'right', color:COR[c], fontWeight:500 }}>{t}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </>
-        }
+            </>
+          }
+        </div>
       </>
     );
 
-    /* ═══ ALERTAS ════════════════════════════════════════════════════════════ */
-    if (pagina === 'alertas') return (
-      <>
+    if (pagina==='alertas') return (
+      <div className="scroll">
         <div className="sec-ttl">Alertas ativos</div>
         <div className="sec-sub">Estações acima da cota de atenção</div>
-        {todasAlertas.length === 0
-          ? <div className="state"><span>✓ Nenhuma estação em alerta no momento.</span></div>
-          : <div className="al-cards">
-              {todasAlertas.map(e => (
-                <div key={e.nome} className="al-card" onClick={() => { setCidade(e.nome); setPagina('estacao'); }}>
-                  <div className="al-card-dot" style={{ background:COR[e.cls] }}/>
-                  <div style={{ flex:1 }}>
-                    <div className="al-card-name">{e.nome}</div>
-                    <div className="al-card-desc">{CFG[e.nome]?.rio} · {e.status}</div>
-                  </div>
-                  <div className="al-card-cota" style={{ color:COR[e.cls] }}>{e.cota.toFixed(2)} m</div>
-                </div>
-              ))}
+        {todasAlertas.length===0
+          ?<div className="state"><span>✓ Nenhuma estação em alerta.</span></div>
+          :<div className="al-cards">{todasAlertas.map(e=>(
+            <div key={e.nome} className="al-card" onClick={()=>{setCidade(e.nome);setPagina('estacao');}}>
+              <div className="al-card-dot" style={{background:COR[e.cls]}}/>
+              <div style={{flex:1}}><div className="al-card-name">{e.nome}</div><div className="al-card-desc">{CFG[e.nome]?.rio} · {e.status}</div></div>
+              <div className="al-card-cota" style={{color:COR[e.cls]}}>{e.cota.toFixed(2)} m</div>
             </div>
-        }
-      </>
+          ))}</div>}
+      </div>
     );
 
-    /* ═══ REDE DE ESTAÇÕES ═══════════════════════════════════════════════════ */
-    if (pagina === 'rede') return (
-      <>
+    if (pagina==='rede') return (
+      <div className="scroll">
         <div className="sec-ttl">Rede de Estações</div>
-        <div className="sec-sub">Bacia Amazônica · {estacoes.length} estações monitoradas</div>
-
+        <div className="sec-sub">Bacia Amazônica · {estacoes.length} estações</div>
         <div className="filtros-rede">
-          <span className="filtro-lbl" style={{ marginRight:4 }}>Região:</span>
-          {['todas', ...Object.keys(REGIOES)].map(r => (
-            <button key={r} className={`filtro-chip${regiaoFiltro === r ? ' ativo' : ''}`} onClick={() => setRegiaoFiltro(r)}>
-              {r === 'todas' ? 'Todas' : r}
-            </button>
+          <span className="filtro-lbl">Região:</span>
+          {['todas',...Object.keys(REGIOES)].map(r=>(
+            <button key={r} className={`filtro-chip${regiaoFiltro===r?' ativo':''}`} onClick={()=>setRegiaoFiltro(r)}>{r==='todas'?'Todas':r}</button>
           ))}
-          <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:8 }}>
+          <div style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:8}}>
             <span className="filtro-lbl">Ordenar:</span>
-            <select className="filtro-sel" value={ordenacao} onChange={e => setOrdenacao(e.target.value)}>
+            <select className="filtro-sel" value={ordenacao} onChange={e=>setOrdenacao(e.target.value)}>
               <option value="nome">Nome A–Z</option>
-              <option value="cota-desc">Cota ↓ alta primeiro</option>
-              <option value="cota-asc">Cota ↑ baixa primeiro</option>
-              <option value="status">Status (crítico primeiro)</option>
+              <option value="cota-desc">Cota ↓ alta</option>
+              <option value="cota-asc">Cota ↑ baixa</option>
+              <option value="status">Status crítico</option>
             </select>
           </div>
         </div>
-
         <div className="est-row-hdr">
-          <span>Estação / Rio</span>
-          <span style={{ textAlign:'right' }}>Cota (m)</span>
-          <span style={{ textAlign:'right' }}>Alerta (m)</span>
-          <span style={{ textAlign:'right' }}>Var. dia</span>
-          <span style={{ textAlign:'right' }}>% Máx.</span>
-          <span>Fonte</span>
-          <span style={{ textAlign:'right' }}>Status</span>
+          <span>Estação / Rio</span><span style={{textAlign:'right'}}>Cota (m)</span><span style={{textAlign:'right'}}>Alerta (m)</span>
+          <span style={{textAlign:'right'}}>Var. dia</span><span style={{textAlign:'right'}}>% Máx.</span><span>Fonte</span><span style={{textAlign:'right'}}>Status</span>
         </div>
-
-        {regiaoFiltro === 'todas' ? (
-          Object.entries(REGIOES).map(([regiao, nomes]) => {
-            const itens = redeOrdenada.filter(d => nomes.includes(d.nome));
-            if (!itens.length) return null;
-            return (
-              <div key={regiao}>
-                <div className="regiao-label">{regiao}</div>
-                <div className="est-card-grid">
-                  {itens.map(d => <EstacaoRow key={d.nome} d={d} dados={dados} onClick={() => { setCidade(d.nome); setPagina('estacao'); }}/>)}
-                </div>
-              </div>
-            );
-          })
-        ) : (
-          <div className="est-card-grid">
-            {redeOrdenada
-              .filter(d => REGIOES[regiaoFiltro]?.includes(d.nome))
-              .map(d => <EstacaoRow key={d.nome} d={d} dados={dados} onClick={() => { setCidade(d.nome); setPagina('estacao'); }}/>)}
-          </div>
-        )}
-      </>
+        {regiaoFiltro==='todas'
+          ? Object.entries(REGIOES).map(([regiao,nomes])=>{
+              const itens=redeOrdenada.filter(d=>nomes.includes(d.nome));
+              if(!itens.length)return null;
+              return <div key={regiao}><div className="regiao-label">{regiao}</div><div className="est-card-grid">{itens.map(d=><EstacaoRow key={d.nome} d={d} dados={dados} onClick={()=>{setCidade(d.nome);setPagina('estacao');}}/>)}</div></div>;
+            })
+          : <div className="est-card-grid">{redeOrdenada.filter(d=>REGIOES[regiaoFiltro]?.includes(d.nome)).map(d=><EstacaoRow key={d.nome} d={d} dados={dados} onClick={()=>{setCidade(d.nome);setPagina('estacao');}}/>)}</div>
+        }
+      </div>
     );
 
-    /* ═══ LOG DE ATUALIZAÇÕES ════════════════════════════════════════════════ */
-    if (pagina === 'log') return (
-      <>
+    if (pagina==='log') return (
+      <div className="scroll">
         <div className="log-header">
-          <div>
-            <div className="sec-ttl">Log de Atualizações</div>
-            <div className="sec-sub" style={{ marginBottom:0 }}>Histórico de coletas · {logEntries.length} registros</div>
-          </div>
+          <div><div className="sec-ttl">Log de Atualizações</div><div className="sec-sub" style={{marginBottom:0}}>Histórico de coletas · {logEntries.length} registros</div></div>
           <div className="log-filters">
-            {[
-              { v:'todas',       l:'Todas' },
-              { v:'sace',        l:'SACE/SGB' },
-              { v:'open-meteo',  l:'Open-Meteo' },
-              { v:'fallback',    l:'Cache' },
-            ].map(f => (
-              <button key={f.v} className={`filtro-chip${logFiltroFonte === f.v ? ' ativo' : ''}`} onClick={() => setLogFiltroFonte(f.v)}>
-                {f.l}
-              </button>
+            {[{v:'todas',l:'Todas'},{v:'sace',l:'SACE'},{v:'open-meteo',l:'Open-Meteo'},{v:'fallback',l:'Cache'}].map(f=>(
+              <button key={f.v} className={`filtro-chip${logFiltroFonte===f.v?' ativo':''}`} onClick={()=>setLogFiltroFonte(f.v)}>{f.l}</button>
             ))}
           </div>
         </div>
-
         <div className="log-summary-row">
-          <div className="log-sum-card">
-            <div className="log-sum-val" style={{ color:'var(--teal)' }}>{logEntries.filter(e => e.fonte === 'sace').length}</div>
-            <div className="log-sum-lbl">Coletas SACE</div>
-          </div>
-          <div className="log-sum-card">
-            <div className="log-sum-val" style={{ color:'var(--amber)' }}>{logEntries.filter(e => e.fonte === 'open-meteo').length}</div>
-            <div className="log-sum-lbl">Open-Meteo</div>
-          </div>
-          <div className={`log-sum-card${cacheCount > 0 ? ' log-sum-alert' : ''}`}>
-            <div className="log-sum-val" style={{ color: cacheCount > 0 ? 'var(--red)' : 'var(--muted)' }}>{cacheCount}</div>
-            <div className="log-sum-lbl">Cache local {cacheCount > 0 ? '⚠' : ''}</div>
-            {cacheCount > 0 && <div style={{ fontSize:9, color:'var(--red)', marginTop:4, fontFamily:'DM Mono,monospace' }}>SACE + Open-Meteo indisponíveis</div>}
-          </div>
-          <div className="log-sum-card">
-            <div className="log-sum-val">{estacoes.length}</div>
-            <div className="log-sum-lbl">Estações ativas</div>
-          </div>
+          <div className="log-sum-card"><div className="log-sum-val" style={{color:'var(--teal)'}}>{logEntries.filter(e=>e.fonte==='sace').length}</div><div className="log-sum-lbl">Coletas SACE</div></div>
+          <div className="log-sum-card"><div className="log-sum-val" style={{color:'var(--amber)'}}>{logEntries.filter(e=>e.fonte==='open-meteo').length}</div><div className="log-sum-lbl">Open-Meteo</div></div>
+          <div className={`log-sum-card${cacheCount>0?' log-sum-alert':''}`}><div className="log-sum-val" style={{color:cacheCount>0?'var(--red)':'var(--muted)'}}>{cacheCount}</div><div className="log-sum-lbl">Cache local{cacheCount>0?' ⚠':''}</div></div>
+          <div className="log-sum-card"><div className="log-sum-val">{estacoes.length}</div><div className="log-sum-lbl">Estações ativas</div></div>
         </div>
-
-        {logFiltrado.length === 0 ? (
-          <div className="state"><span>Nenhum registro encontrado.</span></div>
-        ) : (
-          logFiltrado.map(entry => {
-            const cls = entry.fonte === 'sace' ? 'sace' : entry.fonte === 'open-meteo' ? 'openmeteo' : 'fallback';
-            const isFallback = entry.fonte === 'fallback';
-            const { c } = classificar(entry.cota, CFG[entry.estacao]);
-            const turnoC = { manha:'turno-manha', tarde:'turno-tarde', noite:'turno-noite' }[entry.turno] || 'turno-manha';
-            const turnoL = { manha:'Manhã', tarde:'Tarde', noite:'Noite' }[entry.turno] || 'Manhã';
-            const dataFmt = entry.data ? new Date(entry.data + 'T12:00:00').toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' }) : '—';
-            const fonteC = entry.fonte === 'sace' ? 'fonte-sace' : entry.fonte === 'open-meteo' ? 'fonte-openmeteo' : 'fonte-fallback';
-            const fonteL = { sace:'SACE/SGB', 'open-meteo':'Open-Meteo', fallback:'Cache' }[entry.fonte] || entry.fonte;
-            return (
-              <div key={entry.id} className={`log-entry${isFallback ? ' log-cache' : ''}`} onClick={() => { setCidade(entry.estacao); setPagina('estacao'); }}>
-                <div className="log-dot-wrap">
-                  <div className={`log-dot ${cls}`}/>
-                </div>
-                <div className="log-content">
-                  <div className="log-top">
-                    <span className="log-estacao">{entry.estacao}</span>
-                    <span style={{ fontSize:10, color:'var(--muted)' }}>{entry.rio}</span>
-                    <span className={`log-turno ${turnoC}`}>{turnoL}</span>
-                    <span className={`fonte-badge ${fonteC}`}>{fonteL}</span>
-                    <span className="log-ts">{dataFmt}</span>
-                  </div>
-                  <div className={`log-detail${isFallback ? ' log-detail-erro' : ''}`}>
-                    {entry.fonte === 'sace'
-                      ? `✓ Dados reais coletados via SACE/SGB · ${entry.registros} registros acumulados no período`
-                      : entry.fonte === 'open-meteo'
-                      ? `~ Estimativa via Open-Meteo (SACE indisponível) · ${entry.registros} registros`
-                      : `⚠ Usando cache local — SACE e Open-Meteo indisponíveis · verificar conexão com as fontes`}
-                  </div>
-                </div>
-                <div className="log-cota" style={{ color:COR[c] }}>
-                  {entry.cota != null ? `${entry.cota.toFixed(2)} m` : '—'}
-                </div>
+        {logFiltrado.length===0?<div className="state"><span>Nenhum registro.</span></div>:logFiltrado.map(entry=>{
+          const cls=entry.fonte==='sace'?'sace':entry.fonte==='open-meteo'?'openmeteo':'fallback';
+          const {c}=classificar(entry.cota,CFG[entry.estacao]);
+          const turnoC={manha:'turno-manha',tarde:'turno-tarde',noite:'turno-noite'}[entry.turno]||'turno-manha';
+          const turnoL={manha:'Manhã',tarde:'Tarde',noite:'Noite'}[entry.turno]||'Manhã';
+          const dataFmt=entry.data?new Date(entry.data+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}):'—';
+          const fonteC=entry.fonte==='sace'?'fonte-sace':entry.fonte==='open-meteo'?'fonte-openmeteo':'fonte-fallback';
+          const fonteL={sace:'SACE/SGB','open-meteo':'Open-Meteo',fallback:'Cache'}[entry.fonte]||entry.fonte;
+          return (<div key={entry.id} className={`log-entry${entry.fonte==='fallback'?' log-cache':''}`} onClick={()=>{setCidade(entry.estacao);setPagina('estacao');}}>
+            <div className="log-dot-wrap"><div className={`log-dot ${cls}`}/></div>
+            <div className="log-content">
+              <div className="log-top"><span className="log-estacao">{entry.estacao}</span><span style={{fontSize:10,color:'var(--muted)'}}>{entry.rio}</span><span className={`log-turno ${turnoC}`}>{turnoL}</span><span className={`fonte-badge ${fonteC}`}>{fonteL}</span><span className="log-ts">{dataFmt}</span></div>
+              <div className={`log-detail${entry.fonte==='fallback'?' log-detail-erro':''}`}>
+                {entry.fonte==='sace'?`✓ Dados reais coletados via SACE/SGB · ${entry.registros} registros`:entry.fonte==='open-meteo'?`~ Estimativa via Open-Meteo (SACE indisponível)`:` ⚠ Usando cache local — SACE e Open-Meteo indisponíveis`}
               </div>
-            );
-          })
-        )}
-      </>
+            </div>
+            <div className="log-cota" style={{color:COR[c]}}>{entry.cota!=null?`${entry.cota.toFixed(2)} m`:'—'}</div>
+          </div>);
+        })}
+      </div>
     );
 
-    /* ═══ DASHBOARD ══════════════════════════════════════════════════════════ */
-    if (pagina === 'dashboard') return (
-      <>
+    if (pagina==='dashboard') return (
+      <div className="scroll">
         <div className="sec-ttl">Dashboard analítico</div>
         <div className="sec-sub">Visão consolidada · Bacia Amazônica</div>
         <div className="dash-kpi-row">
-          <div className="dash-kpi"><div className="dash-kpi-lbl">Estações</div><div className="dash-kpi-val" style={{ color:'var(--teal)' }}>{estacoes.length}</div><div className="dash-kpi-sub">rede ativa</div></div>
-          <div className="dash-kpi"><div className="dash-kpi-lbl">Em alerta</div><div className="dash-kpi-val" style={{ color: emAlerta > 0 ? 'var(--red)' : 'var(--teal)' }}>{emAlerta}</div><div className="dash-kpi-sub">acima da cota</div></div>
-          <div className="dash-kpi"><div className="dash-kpi-lbl">Em atenção</div><div className="dash-kpi-val" style={{ color: emAtencao > 0 ? 'var(--amber)' : 'var(--teal)' }}>{emAtencao}</div><div className="dash-kpi-sub">70–100%</div></div>
+          <div className="dash-kpi"><div className="dash-kpi-lbl">Estações</div><div className="dash-kpi-val" style={{color:'var(--teal)'}}>{estacoes.length}</div><div className="dash-kpi-sub">rede ativa</div></div>
+          <div className="dash-kpi"><div className="dash-kpi-lbl">Em alerta</div><div className="dash-kpi-val" style={{color:emAlerta>0?'var(--red)':'var(--teal)'}}>{emAlerta}</div><div className="dash-kpi-sub">acima da cota</div></div>
+          <div className="dash-kpi"><div className="dash-kpi-lbl">Em atenção</div><div className="dash-kpi-val" style={{color:emAtencao>0?'var(--amber)':'var(--teal)'}}>{emAtencao}</div><div className="dash-kpi-sub">70–100%</div></div>
           <div className="dash-kpi"><div className="dash-kpi-lbl">Cota máxima</div><div className="dash-kpi-val">{overallMax.toFixed(2)}</div><div className="dash-kpi-sub">metros</div></div>
         </div>
+
+        {/* Gráfico 1 — Cota vs Alerta, nomes na diagonal corrigidos */}
         <div className="analytics-grid">
           <div className="card analytics-wide">
-            <div className="card-hdr"><div><div className="card-ttl">Cota atual vs. cota de alerta</div><div className="card-sub">todas as estações</div></div></div>
-            <div style={{ height:220 }}>
+            <div className="card-hdr">
+              <div><div className="card-ttl">Cota atual vs. cota de alerta</div><div className="card-sub">todas as estações</div></div>
+            </div>
+            <div style={{height:280}}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={cotaBarData} margin={{ top:4, right:8, left:0, bottom:28 }}>
+                <BarChart data={cotaBarData} margin={{top:4,right:8,left:0,bottom:80}}>
                   <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false}/>
-                  <XAxis dataKey="name" tick={{ fontSize:10, fill:'var(--muted)', fontFamily:'DM Mono,monospace' }} axisLine={false} tickLine={false} angle={-20} textAnchor="end" interval={0}/>
-                  <YAxis tick={{ fontSize:10, fill:'var(--muted)', fontFamily:'DM Mono,monospace' }} axisLine={false} tickLine={false} width={34}/>
+                  <XAxis
+                    dataKey="name"
+                    tick={<DiagonalTick/>}
+                    axisLine={false}
+                    tickLine={false}
+                    interval={0}
+                    height={80}
+                  />
+                  <YAxis tick={{fontSize:10,fill:'var(--muted)',fontFamily:'DM Mono,monospace'}} axisLine={false} tickLine={false} width={34}/>
                   <Tooltip content={<Tip/>}/>
                   <Bar dataKey="cota" name="Cota (m)" fill="var(--teal)" radius={[3,3,0,0]}/>
-                  <Bar dataKey="alerta" name="Alerta (m)" fill="var(--amber)" fillOpacity={0.3} radius={[3,3,0,0]}/>
+                  <Bar dataKey="alerta" name="Alerta (m)" fill="var(--amber)" fillOpacity={0.35} radius={[3,3,0,0]}/>
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
         </div>
+
         <div className="analytics-grid">
+          {/* Gráfico 2 — Variação diária, nomes na diagonal corrigidos */}
           <div className="card">
             <div className="card-hdr"><div><div className="card-ttl">Variação diária (m)</div><div className="card-sub">subida/descida em 24h</div></div></div>
-            <div style={{ height:180 }}>
+            <div style={{height:260}}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={varData} margin={{ top:4, right:8, left:0, bottom:28 }}>
+                <BarChart data={varData} margin={{top:4,right:8,left:0,bottom:80}}>
                   <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false}/>
-                  <XAxis dataKey="name" tick={{ fontSize:10, fill:'var(--muted)', fontFamily:'DM Mono,monospace' }} axisLine={false} tickLine={false} angle={-20} textAnchor="end" interval={0}/>
-                  <YAxis tick={{ fontSize:10, fill:'var(--muted)', fontFamily:'DM Mono,monospace' }} axisLine={false} tickLine={false} width={38}/>
+                  <XAxis
+                    dataKey="name"
+                    tick={<DiagonalTick/>}
+                    axisLine={false}
+                    tickLine={false}
+                    interval={0}
+                    height={80}
+                  />
+                  <YAxis tick={{fontSize:10,fill:'var(--muted)',fontFamily:'DM Mono,monospace'}} axisLine={false} tickLine={false} width={38}/>
                   <Tooltip content={<Tip/>}/>
                   <ReferenceLine y={0} stroke="var(--bordm)" strokeWidth={1}/>
                   <Bar dataKey="variacao" name="Var. (m)" radius={[3,3,0,0]} fill="var(--teal)"/>
@@ -1781,52 +1260,54 @@ export default function App() {
               </ResponsiveContainer>
             </div>
           </div>
+
+          {/* Gráfico 3 — Histórico 30 dias, inalterado */}
           <div className="card">
             <div className="card-hdr">
               <div>
                 <div className="card-ttl">Histórico — 30 dias</div>
                 <div className="card-sub">
-                  <select className="filtro-sel" style={{ padding:'2px 8px', fontSize:11 }} value={cidade} onChange={e => setCidade(e.target.value)}>
-                    {estacoes.map(n => <option key={n} value={n}>{n}</option>)}
+                  <select className="filtro-sel" style={{padding:'2px 8px',fontSize:11}} value={cidade} onChange={e=>setCidade(e.target.value)}>
+                    {estacoes.map(n=><option key={n} value={n}>{n}</option>)}
                   </select>
                 </div>
               </div>
             </div>
-            <div style={{ height:180 }}>
+            <div style={{height:260}}>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={listaDash} margin={{ top:4, right:8, left:0, bottom:0 }}>
+                <AreaChart data={listaDash} margin={{top:4,right:8,left:0,bottom:0}}>
                   <defs>
                     <linearGradient id="gradTeal" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--teal)" stopOpacity={0.2}/>
+                      <stop offset="5%" stopColor="var(--teal)" stopOpacity={0.15}/>
                       <stop offset="95%" stopColor="var(--teal)" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false}/>
-                  <XAxis dataKey="data" tickFormatter={fmtD} tick={{ fontSize:10, fill:'var(--muted)', fontFamily:'DM Mono,monospace' }} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
-                  <YAxis tick={{ fontSize:10, fill:'var(--muted)', fontFamily:'DM Mono,monospace' }} axisLine={false} tickLine={false} width={34} domain={['auto','auto']}/>
+                  <XAxis dataKey="data" tickFormatter={fmtD} tick={{fontSize:10,fill:'var(--muted)',fontFamily:'DM Mono,monospace'}} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
+                  <YAxis tick={{fontSize:10,fill:'var(--muted)',fontFamily:'DM Mono,monospace'}} axisLine={false} tickLine={false} width={34} domain={['auto','auto']}/>
                   <Tooltip content={<Tip/>}/>
-                  {cfgC && <ReferenceLine y={cfgC.cota_alerta} stroke="var(--amber)" strokeDasharray="3 3" strokeWidth={1.5}/>}
+                  {cfgC&&<ReferenceLine y={cfgC.cota_alerta} stroke="var(--amber)" strokeDasharray="3 3" strokeWidth={1.5}/>}
                   <Area type="monotone" dataKey="cota_m" name="Cota (m)" stroke="var(--teal)" strokeWidth={1.8} fill="url(#gradTeal)" dot={false}/>
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>
         </div>
-      </>
+      </div>
     );
   };
 
-  const isMapaFull = pagina === 'mapa';
-  const isHomeFull = pagina === 'home';
+  const isMapaFull = pagina==='mapa';
+  const isHomeFull = pagina==='home';
+  const isEstacao = pagina==='estacao';
 
   return (
     <>
       <style>{css}</style>
-      {!splashDone && <SplashScreen onDone={() => setSplashDone(true)} />}
-
+      {!splashDone&&<SplashScreen onDone={()=>setSplashDone(true)}/>}
       <div className="shell">
-        <aside className={`sidebar${sideOpen ? '' : ' closed'}`}>
-          <div className="sid-logo" onClick={() => setPagina('home')}>
+        <aside className={`sidebar${sideOpen?'':' closed'}`}>
+          <div className="sid-logo" onClick={()=>setPagina('home')}>
             <div className="sid-bzr-wrap"><LogoIcon size={32}/></div>
             <div className="sid-name">
               <div className="sid-wordmark">Fl<span className="sw">u</span>vi<span className="sb">AM</span></div>
@@ -1835,20 +1316,18 @@ export default function App() {
           </div>
           <div className="sid-sec">
             <div className="sid-sec-lbl">Navegação</div>
-            {NAV.map(n => (
-              <button key={n.id} className={`nav-btn${pagina === n.id ? ' active' : ''}`} onClick={() => setPagina(n.id)}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="nav-ico">
-                  <path d={n.d}/>
-                </svg>
+            {NAV.map(n=>(
+              <button key={n.id} className={`nav-btn${pagina===n.id?' active':''}`} onClick={()=>setPagina(n.id)}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="nav-ico"><path d={n.d}/></svg>
                 {n.label}
-                {n.badge && alertCount > 0 && <span className="nav-badge">{alertCount}</span>}
+                {n.badge&&alertCount>0&&<span className="nav-badge">{alertCount}</span>}
               </button>
             ))}
           </div>
           <div className="sid-footer">
             <div className="sid-status">
-              <span className={`s-dot${error ? ' off' : ''}`}/>
-              <span className="s-txt">{error ? 'Offline' : 'Ao vivo'}</span>
+              <span className={`s-dot${error?' off':''}`}/>
+              <span className="s-txt">{error?'Offline':'Ao vivo'}</span>
               <span className="s-val">SACE/SGB</span>
             </div>
           </div>
@@ -1856,71 +1335,50 @@ export default function App() {
 
         <div className="main">
           <div className="topbar">
-            <button className="menu-btn" onClick={() => setSideOpen(o => !o)}>
-              <span/><span/><span/>
-            </button>
-            <div className="topbar-info">
-              <div className="topbar-sub">
-                {estacoes.length} estações · {new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' })}
-              </div>
-            </div>
+            <button className="menu-btn" onClick={()=>setSideOpen(o=>!o)}><span/><span/><span/></button>
+            <div className="topbar-info"><div className="topbar-sub">{estacoes.length} estações · {new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}</div></div>
             <div className="topbar-right">
-              {alertCount > 0 && <span className="badge b-red">⚠ {alertCount} alerta{alertCount > 1 ? 's' : ''}</span>}
-              {loading && <div className="spinner" style={{ width:16, height:16 }}/>}
-              <button className="btn-sm" onClick={() => setTema(t => t === 'dark' ? 'light' : 'dark')}>
-                {tema === 'dark' ? '☀ Claro' : '◐ Escuro'}
-              </button>
+              {alertCount>0&&<span className="badge b-red">⚠ {alertCount} alerta{alertCount>1?'s':''}</span>}
+              {loading&&<div className="spinner" style={{width:16,height:16}}/>}
+              <button className="btn-sm" onClick={()=>setTema(t=>t==='dark'?'light':'dark')}>{tema==='dark'?'☀ Claro':'◐ Escuro'}</button>
             </div>
           </div>
 
           {isHomeFull
             ? renderPage()
             : isMapaFull
-              ? <div style={{ flex:1, position:'relative', overflow:'hidden' }}>{renderPage()}</div>
-              : <div className="scroll">{renderPage()}</div>
+              ? <div style={{flex:1,position:'relative',overflow:'hidden'}}>{renderPage()}</div>
+              : isEstacao
+                ? <div style={{display:'flex',flexDirection:'column',flex:1,overflow:'hidden'}}>{renderPage()}</div>
+                : renderPage()
           }
-
-          <div className="footer">
-            FluviAM · Bacia Amazônica · Dados via SACE/SGB · 2026
-          </div>
+          <div className="footer">FluviAM · Bacia Amazônica · Dados via SACE/SGB · 2026</div>
         </div>
       </div>
     </>
   );
 }
 
-/* ── Componente de linha da rede ─────────────────────────────────────────── */
 function EstacaoRow({ d, dados, onClick }) {
-  const info = dados[d.nome] || {};
-  const lista = info.dados || [];
-  const prev = lista.length > 1 ? (lista[lista.length-2]?.cota_m ?? d.cota) : d.cota;
-  const diff = d.cota - prev;
-  const fonteC = d.fonte === 'sace' ? 'fonte-sace' : d.fonte === 'open-meteo' ? 'fonte-openmeteo' : d.fonte === 'ana' ? 'fonte-ana' : 'fonte-fallback';
-  const fonteL = { sace:'SACE', 'open-meteo':'Open-Meteo', fallback:'Cache', ana:'ANA' }[d.fonte] || d.fonte;
-  const statusBg = d.cls === 'd' ? 'var(--redL)' : d.cls === 'w' ? 'var(--amberL)' : 'var(--tealL)';
-  const statusColor = { g:'var(--teal)', w:'var(--amber)', d:'var(--red)' }[d.cls];
-
+  const info=dados[d.nome]||{}; const lista=info.dados||[];
+  const prev=lista.length>1?(lista[lista.length-2]?.cota_m??d.cota):d.cota;
+  const diff=d.cota-prev;
+  const fonteC=d.fonte==='sace'?'fonte-sace':d.fonte==='open-meteo'?'fonte-openmeteo':d.fonte==='ana'?'fonte-ana':'fonte-fallback';
+  const fonteL={sace:'SACE','open-meteo':'Open-Meteo',fallback:'Cache',ana:'ANA'}[d.fonte]||d.fonte;
+  const statusBg=d.cls==='d'?'var(--redL)':d.cls==='w'?'var(--amberL)':'var(--tealL)';
+  const statusColor={g:'var(--teal)',w:'var(--amber)',d:'var(--red)'}[d.cls];
   return (
     <div className="est-row-card" onClick={onClick}>
       <div>
-        <div style={{ display:'flex', alignItems:'center', gap:7 }}>
-          <span className="tbl-dot" style={{ background:statusColor, flexShrink:0 }}/>
-          <span style={{ fontWeight:500, fontSize:12.5 }}>{d.nome}</span>
-        </div>
-        <div style={{ fontSize:10.5, color:'var(--muted)', marginLeft:14 }}>{CFG[d.nome]?.rio || '—'}</div>
+        <div style={{display:'flex',alignItems:'center',gap:7}}><span className="tbl-dot" style={{background:statusColor,flexShrink:0}}/><span style={{fontWeight:500,fontSize:12.5}}>{d.nome}</span></div>
+        <div style={{fontSize:10.5,color:'var(--muted)',marginLeft:14}}>{CFG[d.nome]?.rio||'—'}</div>
       </div>
       <div className="est-num">{d.cota.toFixed(2)}</div>
-      <div className="est-num" style={{ color:'var(--muted)' }}>{CFG[d.nome]?.cota_alerta?.toFixed(2) || '—'}</div>
-      <div className="est-num" style={{ color: diff > 0 ? 'var(--red)' : diff < 0 ? 'var(--green)' : 'var(--muted)' }}>
-        {diff > 0 ? '+' : ''}{diff.toFixed(2)}
-      </div>
-      <div className="est-num" style={{ color: d.pct > 90 ? 'var(--red)' : d.pct > 70 ? 'var(--amber)' : 'var(--teal)' }}>
-        {d.pct}%
-      </div>
+      <div className="est-num" style={{color:'var(--muted)'}}>{CFG[d.nome]?.cota_alerta?.toFixed(2)||'—'}</div>
+      <div className="est-num" style={{color:diff>0?'var(--red)':diff<0?'var(--green)':'var(--muted)'}}>{diff>0?'+':''}{diff.toFixed(2)}</div>
+      <div className="est-num" style={{color:d.pct>90?'var(--red)':d.pct>70?'var(--amber)':'var(--teal)'}}>{d.pct}%</div>
       <div><span className={`fonte-badge ${fonteC}`}>{fonteL}</span></div>
-      <div style={{ textAlign:'right' }}>
-        <span className="est-status-badge" style={{ background:statusBg, color:statusColor }}>{d.status}</span>
-      </div>
+      <div style={{textAlign:'right'}}><span className="est-status-badge" style={{background:statusBg,color:statusColor}}>{d.status}</span></div>
     </div>
   );
 }
